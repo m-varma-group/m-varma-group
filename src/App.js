@@ -33,19 +33,21 @@ const AppContent = () => {
   }, []);
 
 
-  const login = useGoogleLogin({
-    onSuccess: (tokenResponse) => {
-      setAccessToken(tokenResponse.access_token);
-      setShowLoginMessage(true);
-      if (stayLoggedIn) {
-        localStorage.setItem('accessToken', tokenResponse.access_token);
-        localStorage.setItem('stayLoggedIn', 'true');
-      }
-    },
-    onError: () => alert('Login Failed'),
-    scope: 'https://www.googleapis.com/auth/drive profile email',
-    flow: 'implicit',
-  });
+const login = useGoogleLogin({
+  onSuccess: (tokenResponse) => {
+    setAccessToken(tokenResponse.access_token);
+    setShowLoginMessage(true);
+    if (stayLoggedIn) {
+      localStorage.setItem('accessToken', tokenResponse.access_token);
+      localStorage.setItem('stayLoggedIn', 'true');
+    }
+  },
+  onError: () => alert('Login Failed'),
+  scope: 'https://www.googleapis.com/auth/drive profile email',
+  flow: 'implicit',
+  redirectUri: 'https://secure-dwg.vercel.app/oauth2/callback', // Make sure this is correct
+});
+
 
   const fetchDriveFiles = useCallback(async (folderId) => {
     if (!folderId || !accessToken) return;
