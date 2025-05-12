@@ -9,7 +9,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 9999
 }
 
 .qr-modal {
@@ -29,10 +29,20 @@
   color: #333;
 }
 
-.qr-input {
+.qr-input-url {
   width: 100%;
   padding: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 20px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.qr-input-filename {
+  width: 100%;
+  padding: 10px;
+  margin-top: 20px;
   font-size: 1rem;
   border: 1px solid #ccc;
   border-radius: 6px;
@@ -48,14 +58,14 @@
 .qr-button-row {
   display: flex;
   justify-content: space-between;
-  gap: 10px;
-  margin-top: 12px;
-  width: 100%;
+  gap: 1px;
+  margin-top: 0px;
+  width: 102%;
 }
 
 .qr-button-row button {
   flex: 1;
-  padding: 8px 12px;
+  padding: 8px 20px;
   font-size: 0.95rem;
   border: none;
   border-radius: 6px;
@@ -82,4 +92,19 @@
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+@keyframes fadeOut {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+}
+
+.qr-modal.fade-out {
+  animation: fadeOut 0.2s ease-in-out forwards;
 }

@@ -127,9 +127,6 @@ li:hover {
   font-weight: 500;
 }
 
-.file-item a:hover {
-  
-}
 
 
 .file-link {
@@ -168,9 +165,7 @@ a {
   font-weight: 500;
 }
 
-a:hover {
-  
-}
+
 
 p {
   margin: 0.5rem 0;

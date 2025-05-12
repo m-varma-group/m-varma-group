@@ -1,25 +1,58 @@
-// QRgen.js
-import React, { useRef, useState } from 'react';
-import { QRCodeCanvas } from 'qrcode.react';
+import React, { useEffect, useRef, useState } from 'react';
+import QRCodeStyling from 'qr-code-styling';
 import { truncateFileName } from './utils.js';
 import './QRgen.css';
 
 const QRgen = ({ fileId, isFolder, fileName }) => {
   const [showQR, setShowQR] = useState(false);
   const qrRef = useRef(null);
+  const qrInstance = useRef(null);
+
   const url = isFolder
     ? `https://drive.google.com/drive/folders/${fileId}`
     : `https://drive.google.com/file/d/${fileId}/view`;
 
-  const downloadQR = () => {
-    const canvas = qrRef.current.querySelector('canvas');
-    const pngUrl = canvas.toDataURL('image/png');
-    const link = document.createElement('a');
-    const safeName = fileName.replace(/[^\w\d_.-]/g, '_');
+  const safeName = fileName.replace(/[^\w\d_.-]/g, '_');
 
-    link.href = pngUrl;
-    link.download = `${safeName}-qr.png`;
-    link.click();
+  useEffect(() => {
+    if (!qrInstance.current) {
+      qrInstance.current = new QRCodeStyling({
+        width: 200,
+        height: 200,
+        data: url,
+        image: '/logo192.png',
+        dotsOptions: {
+          color: '#000',
+          type: 'rounded',
+        },
+        backgroundOptions: {
+          color: '#ffffff',
+        },
+        imageOptions: {
+          crossOrigin: 'anonymous',
+          margin: 0,
+          imageSize: 0.5,
+        },
+        qrOptions: {
+          errorCorrectionLevel: 'H',
+        },
+      });
+    } else {
+      qrInstance.current.update({
+        data: url,
+      });
+    }
+
+    if (qrRef.current && showQR) {
+      qrInstance.current.append(qrRef.current);
+    }
+  }, [url, showQR]);
+
+  const downloadQR = () => {
+    qrInstance.current.download({
+      name: `${safeName}-qr`,
+      extension: 'png',
+    });
   };
 
   return (
@@ -32,9 +65,7 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
         <div className="qr-modal-overlay" onClick={(e) => e.stopPropagation()}>
           <div className="qr-modal">
             <h3>QR for "{truncateFileName(fileName)}"</h3>
-            <div ref={qrRef}>
-              <QRCodeCanvas value={url} size={160} includeMargin />
-            </div>
+            <div ref={qrRef}></div>
             <button onClick={downloadQR}>Download QR</button>
             <button onClick={() => setShowQR(false)}>Close</button>
           </div>
