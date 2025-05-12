@@ -1,6 +1,9 @@
 # 🔐 SecureDWG
 
-<img src="./logo.png" alt="SecureDWG Logo" style="width: 100%; max-width: 600px; display: block; margin: 0 auto;" />
+<p align="center">
+  <img src="./logo.png" alt="SecureDWG Logo" width="600"/>
+</p>
+
 
 **SecureDWG** is a secure, minimalist Google Drive interface tailored for viewing, organizing, and sharing DWG files and other documents. It is designed with a clean UX, mobile-friendly layout, and advanced features like persistent folder states and QR code sharing.
 
