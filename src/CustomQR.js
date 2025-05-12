@@ -45,7 +45,7 @@ const CustomQR = ({ customLink, setCustomLink, onClose }) => {
   const safeName = (fileName || 'custom-link').replace(/[^\w\d_.-]/g, '_');
 
   img.onload = () => {
-    const padding = 20; // pixels of white space
+    const padding = 10; // pixels of white space
     const canvas = document.createElement('canvas');
     canvas.width = img.width + padding * 2;
     canvas.height = img.height + padding * 2;
