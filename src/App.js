@@ -295,7 +295,7 @@ const handleLogout = () => {
     if (mimeType.startsWith('video/')) return '🎬';
     if (mimeType.startsWith('audio/')) return '🎧';
     if (mimeType === 'application/msword') return '📝';
-    if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return '📄📝';
+    if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return '📝';
     if (mimeType === 'application/vnd.ms-excel') return '📊';
     if (mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') return '📊';
     if (mimeType === 'application/vnd.ms-powerpoint') return '📽️';
@@ -350,37 +350,64 @@ const handleLogout = () => {
 });
 
    return (
-    <main className="app-container">
-      <h1>SecureDWG</h1>
+<main className="app-container">
+  {!accessToken ? (
+    <div className="login-screen">
+      <div className="login-container">
+        <h1>SecureDWG</h1>
+        <label>
+          <input
+            type="checkbox"
+            checked={stayLoggedIn}
+            onChange={(e) => setStayLoggedIn(e.target.checked)}
+          /> Stay Logged In
+        </label>
+        <button className="primary-button" onClick={login}>
+          Login with Google
+        </button>
+      </div>
+    </div>
+  ) : (
 
-      {!accessToken ? (
         <>
-          <label>
-            <input
-              type="checkbox"
-              checked={stayLoggedIn}
-              onChange={(e) => setStayLoggedIn(e.target.checked)}
-            /> Stay Logged In
-          </label>
-          <button className="primary-button" onClick={login}>Login with Google</button>
-        </>
-      ) : (
-        <>
+        <h1 className="main-title">SecureDWG</h1>
           {showLoginMessage && <h3>You are logged in!</h3>}
 
           {userInfo && (
                 <p>
-                  Welcome, <strong>{userInfo.name}</strong> ({userInfo.email}) <button onClick={handleLogout}>Logout</button>
+                  Welcome, <strong>{userInfo.name}</strong> ({userInfo.email}){' '}
+                  <button className="logout-button" onClick={handleLogout}>Logout</button>
                 </p>
+
               )}
 
 
 
-              {/* ✅ Toolbar first */}
               <div className="toolbar">
-                <button onClick={handleCreateFolder}>➕ New Folder</button>
-                <button onClick={handleFileUploadClick}>📤 Upload File</button>
-                <button onClick={() => setShowLinkModal(true)}>🔗 Add Link</button>
+                <button onClick={handleCreateFolder} title="New Folder">
+                  <span className="icon">➕</span>
+                  <span className="label">New Folder</span>
+                </button>
+
+                <button onClick={handleFileUploadClick} title="Upload File">
+                  <span className="icon">📤</span>
+                  <span className="label">Upload File</span>
+                </button>
+
+                <button onClick={() => setShowLinkModal(true)} title="Add Link">
+                  <span className="icon">🔗</span>
+                  <span className="label">Add Link</span>
+                </button>
+
+                {isMobile && (
+                  <button onClick={() => fetchDriveFiles(currentFolderId)} title="Refresh">
+                    <span className="icon">🔄</span>
+                    <span className="label">Refresh</span>
+                  </button>
+                )}
+
+
+
                 <input
                   type="file"
                   multiple
@@ -389,6 +416,8 @@ const handleLogout = () => {
                   style={{ display: 'none' }}
                 />
               </div>
+
+
 
 
               {/* 🔻 Then search/filter */}
@@ -403,12 +432,15 @@ const handleLogout = () => {
 
 
 
-          {folderStack.length > 0 && !isMobile && (
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-              <button onClick={handleBack}>← Back</button>
-              <button onClick={() => fetchDriveFiles(currentFolderId)}>⟲ Refresh</button>
-            </div>
-          )}
+          {!isMobile && (
+  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+    {folderStack.length > 0 && (
+      <button onClick={handleBack}>← Back</button>
+    )}
+    <button onClick={() => fetchDriveFiles(currentFolderId)}>⟲ Refresh</button>
+  </div>
+)}
+
 
 
           <div
@@ -441,22 +473,22 @@ const handleLogout = () => {
             <li key={file.id}>
               <div className="file-item">
                 <a
-  href={file.mimeType === 'application/vnd.google-apps.folder'
-    ? undefined
-    : `https://drive.google.com/file/d/${file.id}/view`}
-  target={file.mimeType === 'application/vnd.google-apps.folder' ? undefined : "_blank"}
-  rel="noreferrer"
-  onClick={() => {
-    if (file.mimeType === 'application/vnd.google-apps.folder') {
-      handleFolderClick(file);
-    }
-  }}
-  className="file-link"
-  title={file.name} // full name on hover
->
-  <span className="file-icon">{getFileIcon(file.mimeType)}</span>
-  <span className="file-name">{file.name}</span>
-</a>
+                  href={file.mimeType === 'application/vnd.google-apps.folder'
+                    ? undefined
+                    : `https://drive.google.com/file/d/${file.id}/view`}
+                  target={file.mimeType === 'application/vnd.google-apps.folder' ? undefined : "_blank"}
+                  rel="noreferrer"
+                  onClick={() => {
+                    if (file.mimeType === 'application/vnd.google-apps.folder') {
+                      handleFolderClick(file);
+                    }
+                  }}
+                  className="file-link"
+                  title={file.name} // full name on hover
+                >
+                  <span className="file-icon">{getFileIcon(file.mimeType)}</span>
+                  <span className="file-name">{file.name}</span>
+                </a>
 
 
 
@@ -477,6 +509,16 @@ const handleLogout = () => {
         </ul>
       </div>
     )}
+    {/* Always visible Back to Top Button */}
+    {isMobile && folderStack.length === 0 && (
+      <div className="bottom-nav">
+        <button onClick={scrollToTop}>↑</button>
+      </div>
+    )}
+    {!isMobile && (
+  <button className="scroll-to-top" onClick={scrollToTop} title="top">Back To Top</button>
+)}
+
   </>
 )}
 
@@ -496,16 +538,9 @@ const handleLogout = () => {
   />
 )}
 
-{!isMobile && folderStack.length > 0 && (
-  <button className="scroll-to-top" onClick={scrollToTop} title="top">Back To Top</button>
-)}
 
-{/* Always visible Back to Top Button */}
-{isMobile && folderStack.length === 0 && (
-  <div className="bottom-nav">
-    <button onClick={scrollToTop}>↑</button>
-  </div>
-)}
+
+
 
 
 
