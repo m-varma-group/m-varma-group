@@ -20,7 +20,7 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
         width: 200,
         height: 200,
         data: url,
-        image: '/logo192.png',
+        image: '/logo.png',
         dotsOptions: {
           color: '#000',
           type: 'rounded',
@@ -31,7 +31,7 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
         imageOptions: {
           crossOrigin: 'anonymous',
           margin: 0,
-          imageSize: 0.5,
+          imageSize: 0.6,
         },
         qrOptions: {
           errorCorrectionLevel: 'H',

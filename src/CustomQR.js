@@ -6,7 +6,7 @@ const qrCode = new QRCodeStyling({
   width: 200,
   height: 200,
   type: 'canvas',
-  image: '/logo192.png',
+  image: '/logo.png',
   qrOptions: {
     errorCorrectionLevel: 'H',
     margin: 16,
