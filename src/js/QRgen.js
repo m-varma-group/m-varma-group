@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import QRCodeStyling from 'qr-code-styling';
 import { truncateFileName } from './utils.js';
-import './QRgen.css';
+import '../css/QRgen.css';
 
 const QRgen = ({ fileId, isFolder, fileName }) => {
   const [showQR, setShowQR] = useState(false);
@@ -63,7 +63,7 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
 
       {showQR && (
         <div className="qr-modal-overlay" onClick={(e) => e.stopPropagation()}>
-          <div className="qr-modal">
+          <div className="qr-modal-gen">
             <h3>QR for "{truncateFileName(fileName)}"</h3>
             <div ref={qrRef}></div>
             <button onClick={downloadQR}>Download QR</button>

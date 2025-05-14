@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import QRCodeStyling from 'qr-code-styling';
-import './CustomQR.css';
+import '../css/CustomQR.css';
 
 const qrCode = new QRCodeStyling({
   width: 200,

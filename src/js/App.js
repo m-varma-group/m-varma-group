@@ -1,0 +1,327 @@
+//App.js
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import '../css/App.css';
+import BottomNavBar from './BottomNavBar';
+import CustomQR from './CustomQR';
+import SearchFilter, { applyFiltersAndSort } from './SearchFilter';
+import Toolbar from './Toolbar';
+import DriveDropZone from './DriveDropZone';
+import { useGoogleDriveLogin } from './GoogleLogin';
+import {
+  fetchDriveFiles,
+  fetchUserInfo,
+  createFolder,
+  uploadFiles,
+  deleteFile
+} from './DriveAPI';
+import { saveToLocal, getFromLocal, clearLocalStorage } from './AccLocalStore'; // 👈 Import
+
+const AppContent = () => {
+  const [userInfo, setUserInfo] = useState(null);
+  const [accessToken, setAccessToken] = useState(null);
+  const [files, setFiles] = useState([]);
+  const [currentFolderId, setCurrentFolderId] = useState('root');
+  const [folderStack, setFolderStack] = useState([]);
+  const [showLoginMessage, setShowLoginMessage] = useState(false);
+  const [stayLoggedIn, setStayLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [fileType, setFileType] = useState('all');
+  const [isDragging, setIsDragging] = useState(false);
+  const [sortOption, setSortOption] = useState(null);
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [customLink, setCustomLink] = useState('');
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const fileInputRef = useRef();
+
+  const { login } = useGoogleDriveLogin({
+    stayLoggedIn,
+    onSuccessCallback: (tokenResponse) => {
+      const now = Date.now();
+      setAccessToken(tokenResponse.access_token);
+      saveToLocal.accessToken(tokenResponse.access_token);
+      saveToLocal.loginTime(now);
+      setShowLoginMessage(true);
+    },
+  });
+
+
+  const loadFiles = useCallback(async (folderId) => {
+    if (!folderId || !accessToken) return;
+    setLoading(true);
+    setError('');
+    try {
+      const result = await fetchDriveFiles(folderId, accessToken);
+      setFiles(result);
+    } catch {
+      setError('Failed to fetch files.');
+    } finally {
+      setLoading(false);
+    }
+  }, [accessToken]);
+
+  const loadUser = useCallback(async () => {
+    try {
+      const user = await fetchUserInfo(accessToken);
+      setUserInfo(user);
+      if (stayLoggedIn) {
+        saveToLocal.userInfo(user);
+      }
+    } catch {
+      setError('Failed to fetch user info.');
+    }
+  }, [accessToken, stayLoggedIn]);
+
+  const handleCreateFolder = async () => {
+    const folderName = prompt('Enter folder name:');
+    if (!folderName) return;
+    try {
+      await createFolder(folderName, currentFolderId, accessToken);
+      loadFiles(currentFolderId);
+    } catch {
+      alert('Failed to create folder.');
+    }
+  };
+
+  const handleFileUpload = async (e) => {
+    const filesToUpload = e.target.files;
+    if (!filesToUpload?.length) return;
+    try {
+      await uploadFiles(filesToUpload, files, currentFolderId, accessToken);
+      loadFiles(currentFolderId);
+    } catch {
+      alert('Error uploading files.');
+    }
+  };
+
+  const handleDelete = async (fileId, fileName) => {
+    const confirmation = window.prompt(`Type DELETE to confirm deletion of "${fileName}":`);
+    if (confirmation !== 'DELETE') {
+      alert('Deletion cancelled.');
+      return;
+    }
+
+    try {
+      await deleteFile(fileId, accessToken);
+      alert(`"${fileName}" deleted successfully.`);
+      loadFiles(currentFolderId);
+    } catch {
+      alert('Error deleting file.');
+    }
+  };
+
+  const handleFolderClick = (folder) => {
+    const newStack = [...folderStack, { id: currentFolderId, name: folder.name }];
+    setFolderStack(newStack);
+    setCurrentFolderId(folder.id);
+  };
+
+  const handleBack = () => {
+    if (folderStack.length > 0) {
+      const prev = folderStack[folderStack.length - 1];
+      setFolderStack(folderStack.slice(0, -1));
+      setCurrentFolderId(prev.id);
+      setFileType('all');
+    }
+  };
+
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  const handleLogout = () => {
+    if (!window.confirm('Press OK to Logout\nPress Cancel to Stay Signed In')) return;
+    setAccessToken(null);
+    setUserInfo(null);
+    setFiles([]);
+    setFolderStack([]);
+    setCurrentFolderId('root');
+    setStayLoggedIn(false);
+    clearLocalStorage(); // ✅ Clear
+    alert('Logged out!');
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const droppedFiles = e.dataTransfer.files;
+    if (droppedFiles?.length > 0) {
+      const syntheticEvent = { target: { files: droppedFiles } };
+      handleFileUpload(syntheticEvent);
+    }
+  };
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    const token = getFromLocal.accessToken();
+    const user = getFromLocal.userInfo();
+    const stay = getFromLocal.stayLoggedIn();
+
+    if (token && user && stay) {
+      setAccessToken(token);
+      setUserInfo(user);
+      setStayLoggedIn(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    const savedFolderId = getFromLocal.currentFolderId();
+    const savedStack = getFromLocal.folderStack();
+    if (savedFolderId) setCurrentFolderId(savedFolderId);
+    if (savedStack) setFolderStack(savedStack);
+  }, []);
+
+  useEffect(() => {
+    if (accessToken && currentFolderId) {
+      loadFiles(currentFolderId);
+      loadUser();
+      const timer = setTimeout(() => setShowLoginMessage(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [accessToken, currentFolderId, loadFiles, loadUser]);
+
+  useEffect(() => {
+    if (stayLoggedIn) {
+      saveToLocal.currentFolderId(currentFolderId);
+      saveToLocal.folderStack(folderStack);
+      saveToLocal.stayLoggedIn(true);
+    }
+  }, [currentFolderId, folderStack, stayLoggedIn]);
+
+  useEffect(() => {
+    if (!stayLoggedIn || !accessToken) return;
+
+    const loginTime = getFromLocal.loginTime();
+    const now = Date.now();
+    const elapsed = now - loginTime;
+    const maxSession = 55 * 60 * 1000;
+
+    if (elapsed > maxSession) {
+      console.log('Access token expired. Attempting re-login...');
+      login();
+    } else {
+      const timeout = setTimeout(() => {
+        console.log('Auto-relogin triggered.');
+        login();
+      }, maxSession - elapsed);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [stayLoggedIn, accessToken, login]);
+
+
+  const sorted = applyFiltersAndSort(files, searchTerm, fileType, sortOption);
+
+  return (
+    <main className="app-container">
+      {!accessToken ? (
+        <div className="login-screen">
+          <div className="login-container">
+            <h1>SecureDWG</h1>
+            <label>
+              <input
+                type="checkbox"
+                checked={stayLoggedIn}
+                onChange={(e) => setStayLoggedIn(e.target.checked)}
+              /> Stay Logged In
+            </label>
+            <button className="primary-button" onClick={login}>Login with Google</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <h1 className="main-title">SecureDWG</h1>
+          {showLoginMessage && <h3>You are logged in!</h3>}
+          {userInfo && (
+            <p>
+              Welcome, <strong>{userInfo.name}</strong> ({userInfo.email}){' '}
+              <button className="logout-button" onClick={handleLogout}>Logout</button>
+            </p>
+          )}
+
+          <Toolbar
+            isMobile={isMobile}
+            handleCreateFolder={handleCreateFolder}
+            handleFileUploadClick={() => fileInputRef.current.click()}
+            setShowLinkModal={setShowLinkModal}
+            fetchDriveFiles={loadFiles}
+            currentFolderId={currentFolderId}
+            fileInputRef={fileInputRef}
+            handleFileUpload={handleFileUpload}
+          />
+
+          <SearchFilter
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            fileType={fileType}
+            setFileType={setFileType}
+            sortOption={sortOption}
+            setSortOption={setSortOption}
+          />
+
+          {!isMobile && (
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+              {folderStack.length > 0 && (
+                <button onClick={handleBack}>← Back</button>
+              )}
+              <button onClick={() => loadFiles(currentFolderId)}>⟲ Refresh</button>
+              
+            </div>
+          )}
+
+          <DriveDropZone
+            isDragging={isDragging}
+            handleDragOver={handleDragOver}
+            handleDragLeave={handleDragLeave}
+            handleDrop={handleDrop}
+            folderStack={folderStack}
+            loading={loading}
+            error={error}
+            sorted={sorted}
+            handleFolderClick={handleFolderClick}
+            currentFolderId={currentFolderId}
+            fetchDriveFiles={loadFiles}
+            handleDelete={handleDelete}
+            isMobile={isMobile}
+            scrollToTop={scrollToTop}
+          />
+        </>
+      )}
+
+      {isMobile && folderStack.length > 0 && (
+        <BottomNavBar onBack={handleBack} scrollToTop={scrollToTop} />
+      )}
+
+      {showLinkModal && (
+        <CustomQR
+          customLink={customLink}
+          setCustomLink={setCustomLink}
+          onClose={() => setShowLinkModal(false)}
+        />
+      )}
+    </main>
+  );
+};
+
+const App = () => (
+  <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
+    <AppContent />
+  </GoogleOAuthProvider>
+);
+
+export default App;

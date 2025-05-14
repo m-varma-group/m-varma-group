@@ -1,5 +1,5 @@
 import React from 'react';
-import './BottomNavBar.css';
+import '../css/BottomNavBar.css';
 
 const BottomNavBar = ({ onBack, scrollToTop }) => {
   return (
