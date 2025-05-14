@@ -3,7 +3,7 @@
 ## 🔧 1.1: Create a Google Cloud Project
 - Go to [Google Cloud Console](https://console.cloud.google.com/)
 - Click the project dropdown > **"New Project"**
-- Name it something like **SecureDriveManager**
+- Name it.
 - Click **Create**
 
 ## 🔧 1.2: Enable Google Drive API
