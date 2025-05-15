@@ -37,7 +37,7 @@ const DriveDropZone = ({
       {isDragging ? (
         <div className="drag-overlay">
           <div className="drag-message">
-            <div className="drag-icon">📤</div>
+            <div className="drag-icon"><span role="img" aria-label="Drop here to Upload">📤</span></div>
             <div className="drag-text">Drop here to Upload</div>
           </div>
         </div>
@@ -65,6 +65,7 @@ const DriveDropZone = ({
                             ? `https://drive.google.com/drive/folders/${file.id}`
                             : `https://drive.google.com/file/d/${file.id}/view`}
                           target="_blank"
+                          
                           rel="noreferrer"
                           onClick={(e) => {
                             if (isFolder) {
@@ -91,16 +92,18 @@ const DriveDropZone = ({
                               handleCopyLink(file.id, isFolder);
                             }}
                             title="Copy shareable link"
-                          >
+                          ><span role="img" aria-label="Add Link">
                             🔗
+                            </span>
                           </button>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDelete(file.id, file.name);
                             }}
-                          >
+                          ><span role="img" aria-label="delete">
                             🗑️
+                            </span>
                           </button>
                         </div>
                       </div>

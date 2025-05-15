@@ -3,6 +3,8 @@
   top: 20px;
   right: 20px;
   width: 300px;
+  max-height: 50vh;
+  overflow-y: auto; 
   background: white;
   border: 1px solid #ccc;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
@@ -12,9 +14,13 @@
   font-family: sans-serif;
   display: flex;
   flex-direction: column;
-  gap: 1rem; /* Adds consistent spacing between children */
+  gap: 1rem;
   box-sizing: border-box;
+  scroll-behavior: smooth;
+  scrollbar-width: thin; 
+  scrollbar-color: #888 #f1f1f1;
 }
+
 
 .upload-modal h4 {
   margin: 0;
@@ -22,6 +28,53 @@
   font-weight: bold;
   text-align: center;
 }
+
+.upload-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+}
+
+.minimize-button {
+  all: unset;
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.minimize-button:hover {
+  background: #eee;
+}
+
+.upload-modal.minimized {
+  height: auto;
+  max-height: none;
+  overflow: hidden;
+  padding-bottom: 0.5rem;
+}
+
+
+.upload-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.upload-modal::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 8px;
+}
+
+.upload-modal::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 8px;
+}
+
+.upload-modal::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
 
 .upload-item {
   display: flex;
