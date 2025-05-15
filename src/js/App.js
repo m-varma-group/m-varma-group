@@ -1,13 +1,15 @@
-//App.js
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import '../css/App.css';
+import '../css/UploadModal.css';
 import BottomNavBar from './BottomNavBar';
 import CustomQR from './CustomQR';
 import SearchFilter, { applyFiltersAndSort } from './SearchFilter';
 import Toolbar from './Toolbar';
 import DriveDropZone from './DriveDropZone';
 import { useGoogleDriveLogin } from './GoogleLogin';
+import UploadProgressModal from './UploadProgressModal';
+
 import {
   fetchDriveFiles,
   fetchUserInfo,
@@ -15,7 +17,7 @@ import {
   uploadFiles,
   deleteFile
 } from './DriveAPI';
-import { saveToLocal, getFromLocal, clearLocalStorage } from './AccLocalStore'; // 👈 Import
+import { saveToLocal, getFromLocal, clearLocalStorage } from './AccLocalStore';
 
 const AppContent = () => {
   const [userInfo, setUserInfo] = useState(null);
@@ -34,6 +36,10 @@ const AppContent = () => {
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [customLink, setCustomLink] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [uploadProgress, setUploadProgress] = useState({});
+  const [uploadTasks, setUploadTasks] = useState({});
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadDone, setUploadDone] = useState(false);
   const fileInputRef = useRef();
 
   const { login } = useGoogleDriveLogin({
@@ -46,7 +52,6 @@ const AppContent = () => {
       setShowLoginMessage(true);
     },
   });
-
 
   const loadFiles = useCallback(async (folderId) => {
     if (!folderId || !accessToken) return;
@@ -88,17 +93,81 @@ const AppContent = () => {
   const handleFileUpload = async (e) => {
     const filesToUpload = e.target.files;
     if (!filesToUpload?.length) return;
+
+    setUploadProgress({});
+    setUploadTasks({});
+    setShowUploadModal(true);
+    setUploadDone(false);
+
+    const uploadControllers = {};
+    const totalFiles = filesToUpload.length;
+    let completedFiles = 0;
+
+    const onSingleFileProgress = (fileName, percent) => {
+      setUploadProgress(prev => ({
+        ...prev,
+        [fileName]: percent
+      }));
+    };
+
+    const onSingleFileComplete = () => {
+      completedFiles++;
+      if (completedFiles === totalFiles) {
+        setUploadDone(true);
+      }
+    };
+
     try {
-      await uploadFiles(filesToUpload, files, currentFolderId, accessToken);
+      for (const file of filesToUpload) {
+        const controller = new AbortController();
+        uploadControllers[file.name] = controller;
+
+        await uploadFiles(
+          [file],
+          files,
+          currentFolderId,
+          accessToken,
+          (fileName, percent) => {
+            onSingleFileProgress(fileName, percent);
+          },
+          controller.signal
+        );
+        onSingleFileComplete();
+      }
       loadFiles(currentFolderId);
-    } catch {
-      alert('Error uploading files.');
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        alert('An error occurred during upload.');
+      }
     }
+    setUploadTasks(uploadControllers);
+  };
+
+  const handleCancelUpload = (fileName) => {
+    const controller = uploadTasks[fileName];
+    if (controller) controller.abort();
+    setUploadProgress(prev => {
+      const copy = { ...prev };
+      delete copy[fileName];
+      return copy;
+    });
+    setUploadTasks(prev => {
+      const copy = { ...prev };
+      delete copy[fileName];
+      return copy;
+    });
+  };
+
+  const handleCloseUploadModal = () => {
+    setShowUploadModal(false);
+    setUploadProgress({});
+    setUploadTasks({});
+    setUploadDone(false);
   };
 
   const handleDelete = async (fileId, fileName) => {
-    const confirmation = window.prompt(`Type DELETE to confirm deletion of "${fileName}":`);
-    if (confirmation !== 'DELETE') {
+    const confirmation = window.prompt(`Type DELETE to confirm deletion of "${fileName}":`).toLowerCase();
+    if (confirmation !== 'delete') {
       alert('Deletion cancelled.');
       return;
     }
@@ -137,7 +206,7 @@ const AppContent = () => {
     setFolderStack([]);
     setCurrentFolderId('root');
     setStayLoggedIn(false);
-    clearLocalStorage(); // ✅ Clear
+    clearLocalStorage();
     alert('Logged out!');
   };
 
@@ -224,7 +293,6 @@ const AppContent = () => {
     }
   }, [stayLoggedIn, accessToken, login]);
 
-
   const sorted = applyFiltersAndSort(files, searchTerm, fileType, sortOption);
 
   return (
@@ -280,9 +348,9 @@ const AppContent = () => {
                 <button onClick={handleBack}>← Back</button>
               )}
               <button onClick={() => loadFiles(currentFolderId)}>⟲ Refresh</button>
-              
             </div>
           )}
+
 
           <DriveDropZone
             isDragging={isDragging}
@@ -314,6 +382,16 @@ const AppContent = () => {
           onClose={() => setShowLinkModal(false)}
         />
       )}
+
+      {showUploadModal && (
+        <UploadProgressModal
+          uploadProgress={uploadProgress}
+          onCancel={handleCancelUpload}
+          onClose={handleCloseUploadModal}
+          uploadDone={uploadDone}
+        />
+      )}
+
     </main>
   );
 };

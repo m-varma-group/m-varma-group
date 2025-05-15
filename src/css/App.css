@@ -106,6 +106,8 @@ li:hover {
   width: 100%;
 }
 
+
+
 .qr-section {
   display: flex;
   flex-direction: column;
@@ -134,7 +136,7 @@ display: flex;
 align-items: flex-start;
 text-decoration: none;
 color: inherit;
-max-width: 650px;
+max-width: 540px;
 }
 
 
@@ -255,12 +257,6 @@ input[type="text"] {
 }
 
 
-
-
-
-
-
-
 .drag-overlay {
   display: flex;
   flex-direction: column;
@@ -353,7 +349,7 @@ input[type="text"] {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0rem; /* adjust spacing between label and button */
+  gap: 0rem;
 }
 
 
@@ -392,7 +388,6 @@ input[type="text"] {
 
   .bottom-nav {
     display: none;
-    /* Hidden by default */
   }
 
 
