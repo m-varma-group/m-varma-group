@@ -12,7 +12,7 @@ export const fetchDriveFiles = async (folderId, token) => {
     return data.files || [];
   } catch (error) {
     console.error('Failed to fetch files:', error);
-    throw error;
+    return [];
   }
 };
 
@@ -24,7 +24,7 @@ export const fetchUserInfo = async (token) => {
     return await res.json();
   } catch (error) {
     console.error('Failed to fetch user info:', error);
-    throw error;
+    return null;
   }
 };
 
@@ -43,8 +43,9 @@ export const createFolder = async (name, parentId, token) => {
       }),
     });
     if (!res.ok) throw new Error('Failed to create folder');
+    return await res.json();
   } catch (error) {
-    console.error('Error creating folder:', error);
+    console.error('Create folder error:', error);
     throw error;
   }
 };
@@ -71,17 +72,17 @@ export const uploadFiles = async (
   };
 
   const uploadSingleFile = async (file) => {
+    const uniqueName = getUniqueName(file.name);
+    const metadata = {
+      name: uniqueName,
+      parents: [folderId],
+    };
+
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('file', file);
+
     try {
-      const uniqueName = getUniqueName(file.name);
-      const metadata = {
-        name: uniqueName,
-        parents: [folderId],
-      };
-
-      const form = new FormData();
-      form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-      form.append('file', file);
-
       await axios.post(
         'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
         form,
@@ -98,14 +99,13 @@ export const uploadFiles = async (
         }
       );
     } catch (error) {
-      console.error(`Error uploading file ${file.name}:`, error);
+      console.error(`Upload failed for ${file.name}:`, error);
       throw error;
     }
   };
 
-  for (const file of fileList) {
-    await uploadSingleFile(file);
-  }
+  const uploadPromises = fileList.map((file) => uploadSingleFile(file));
+  await Promise.all(uploadPromises); // Parallel uploads
 };
 
 export const deleteFile = async (fileId, token) => {
@@ -116,7 +116,7 @@ export const deleteFile = async (fileId, token) => {
     });
     if (!res.ok) throw new Error('Failed to delete file');
   } catch (error) {
-    console.error(`Error deleting file ${fileId}:`, error);
+    console.error(`Delete failed for file ${fileId}:`, error);
     throw error;
   }
 };
@@ -134,7 +134,7 @@ export const deleteMultipleFiles = async (fileIds, token) => {
       if (!res.ok) throw new Error('Failed to delete some files');
     }
   } catch (error) {
-    console.error('Error deleting multiple files:', error);
+    console.error('Delete multiple files error:', error);
     throw error;
   }
 };
