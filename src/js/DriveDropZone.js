@@ -97,10 +97,20 @@ const DriveDropZone = ({
                             </span>
                           </button>
                           <button
+                            // onClick={(e) => {
+                            //   e.stopPropagation();
+                            //   handlePermission(file.id);
+                            // }}
+                            title="Manage permissions"
+                          >
+                            <span role="img" aria-label="Permissions">🛡️</span>
+                          </button>
+                          <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDelete(file.id, file.name);
                             }}
+                            title="Delete"
                           ><span role="img" aria-label="delete">
                             🗑️
                             </span>
