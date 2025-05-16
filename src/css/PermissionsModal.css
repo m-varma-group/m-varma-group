@@ -1,0 +1,193 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0; 
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  min-width: 500px;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+.modal-content.fade-out {
+  animation: fadeOut 0.2s ease-in-out forwards;
+}
+
+.modal-content h2,
+.modal-content h3 {
+  margin: 0 0 10px;
+}
+
+.modal-content input[type="email"],
+.modal-content select {
+  width: 100%;
+  padding: 8px;
+  font-size: 14px;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+
+.modal-content button {
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.permissions-modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  margin-top: 10px;
+}
+
+
+/* Flex layout for email + role + add button */
+.invite-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.invite-row input,
+.invite-row select {
+  flex: 1;
+  min-width: 120px;
+}
+
+.add-permission-button {
+  flex-shrink: 0;
+  height: 35px;
+  background-color: #1a73e8;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  font-weight: 500;
+  margin-top: 0px;
+}
+
+.add-permission-button:hover {
+  background-color: #155ab6;
+}
+
+.save-close-permission-button {
+  flex-shrink: 0;
+  height: 35px;
+  min-width: 375px;
+  background-color: #1a73e8;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  font-weight: 500;
+  margin-top: 0px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.save-close-permission-button:hover {
+  background-color: #155ab6;
+}
+
+.save-close-permission-button:last-child{
+  background-color: #6c757d;
+  min-width: 100px;
+}
+
+.modal-content .radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modal-content .radio-group label {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  line-height: 1.3;
+  font-size: 14px;
+}
+
+/* Scrollable area for the permissions list */
+.scrollable-permissions {
+  max-height: 250px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;               
+  scrollbar-color: #888 #f1f1f1;       
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;  
+  justify-content: flex-start; 
+
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #fafafa;
+  padding: 8px;                        
+  box-sizing: border-box;
+}
+
+.scrollable-permissions ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.scrollable-permissions li {
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+
+/* WebKit browsers (Chrome, Edge, Safari) */
+.scrollable-permissions::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollable-permissions::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 8px;
+}
+
+.scrollable-permissions::-webkit-scrollbar-thumb {
+  background-color: #888;
+  border-radius: 8px;
+}
+
+
+@keyframes fadeIn {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+}

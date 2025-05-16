@@ -1,5 +1,11 @@
+// Standard import of React and associated CSS styling.
 import React from 'react';
 import '../css/BottomNavBar.css';
+
+/* scrollToTop is always shown as the "↑" button.
+
+onBack is conditionally rendered as the "←" button based on whether the onBack prop is passed.
+ */
 
 const BottomNavBar = ({ onBack, scrollToTop }) => {
   return (
@@ -15,4 +21,6 @@ const BottomNavBar = ({ onBack, scrollToTop }) => {
   );
 };
 
+
+// Allows BottomNavBar to be imported elsewhere in the app.
 export default BottomNavBar;

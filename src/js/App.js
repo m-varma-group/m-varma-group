@@ -1,7 +1,10 @@
+// React hooks, CSS styles, and component imports
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import '../css/App.css';
 import '../css/UploadModal.css';
+
+// Custom component imports
 import BottomNavBar from './BottomNavBar';
 import CustomQR from './CustomQR';
 import SearchFilter, { applyFiltersAndSort } from './SearchFilter';
@@ -9,7 +12,10 @@ import Toolbar from './Toolbar';
 import DriveDropZone from './DriveDropZone';
 import { useGoogleDriveLogin } from './GoogleLogin';
 import UploadProgressModal from './UploadProgressModal';
+import PermissionsModal from './PermissionsModal';
 
+
+// API and localStorage logic
 import {
   fetchDriveFiles,
   fetchUserInfo,
@@ -19,6 +25,7 @@ import {
 } from './DriveAPI';
 import { saveToLocal, getFromLocal, clearLocalStorage } from './AccLocalStore';
 
+// Defines the core logic and UI for your app using stateful hooks.
 const AppContent = () => {
   const [userInfo, setUserInfo] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
@@ -40,8 +47,13 @@ const AppContent = () => {
   const [uploadTasks, setUploadTasks] = useState({});
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadDone, setUploadDone] = useState(false);
+  const [showPermissions, setShowPermissions] = useState(false);
+  const [selectedFileId, setSelectedFileId] = useState(null);
+  const [selectedFileName, setSelectedFileName] = useState('');
+
   const fileInputRef = useRef();
 
+  // Initializes login flow and handles what happens when the user logs in successfully.
   const { login } = useGoogleDriveLogin({
     stayLoggedIn,
     onSuccessCallback: (tokenResponse) => {
@@ -53,6 +65,7 @@ const AppContent = () => {
     },
   });
 
+  // Fetches drive files and user info when the folder or session changes.
   const loadFiles = useCallback(async (folderId) => {
     if (!folderId || !accessToken) return;
     setLoading(true);
@@ -79,6 +92,8 @@ const AppContent = () => {
     }
   }, [accessToken, stayLoggedIn]);
 
+
+  // Prompts the user to enter a folder name and creates it on Drive.
   const handleCreateFolder = async () => {
     const folderName = prompt('Enter folder name:');
     if (!folderName) return;
@@ -89,7 +104,8 @@ const AppContent = () => {
       alert('Failed to create folder.');
     }
   };
-
+   
+  // Handles uploading multiple files with per-file progress and completion tracking.
   const handleFileUpload = async (e) => {
     const filesToUpload = e.target.files;
     if (!filesToUpload?.length) return;
@@ -143,6 +159,7 @@ const AppContent = () => {
     setUploadTasks(uploadControllers);
   };
 
+  // Cancels an individual file upload or closes the upload progress modal.
   const handleCancelUpload = (fileName) => {
     const controller = uploadTasks[fileName];
     if (controller) controller.abort();
@@ -165,6 +182,7 @@ const AppContent = () => {
     setUploadDone(false);
   };
 
+  // Asks for confirmation before deleting a file or folder from Google Drive.
   const handleDelete = async (fileId, fileName) => {
     const confirmation = window.prompt(`Type DELETE to confirm deletion of "${fileName}":`).toLowerCase();
     if (confirmation !== 'delete') {
@@ -181,6 +199,7 @@ const AppContent = () => {
     }
   };
 
+  // Navigates into subfolders or back to parent folders using a stack-based approach.
   const handleFolderClick = (folder) => {
     const newStack = [...folderStack, { id: currentFolderId, name: folder.name }];
     setFolderStack(newStack);
@@ -195,7 +214,7 @@ const AppContent = () => {
       setFileType('all');
     }
   };
-
+  // Smooth scroll and user logout/reset functionality.
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
   const handleLogout = () => {
@@ -210,6 +229,7 @@ const AppContent = () => {
     alert('Logged out!');
   };
 
+  // Enables file drag-and-drop uploads.
   const handleDragOver = (e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -230,6 +250,7 @@ const AppContent = () => {
     }
   };
 
+  // Handles startup logic, session restoration, auto-refresh, and screen responsiveness.
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener('resize', handleResize);
@@ -293,8 +314,10 @@ const AppContent = () => {
     }
   }, [stayLoggedIn, accessToken, login]);
 
+  // Applies search, type filters, and sorting to the displayed files.
   const sorted = applyFiltersAndSort(files, searchTerm, fileType, sortOption);
-
+  
+  // Renders login screen or full Drive interface depending on user’s login state.
   return (
     <main className="app-container">
       {!accessToken ? (
@@ -367,6 +390,9 @@ const AppContent = () => {
             handleDelete={handleDelete}
             isMobile={isMobile}
             scrollToTop={scrollToTop}
+            setShowPermissions={setShowPermissions}
+            setSelectedFileId={setSelectedFileId}
+            setSelectedFileName={setSelectedFileName}
           />
         </>
       )}
@@ -392,10 +418,21 @@ const AppContent = () => {
         />
       )}
 
+      {showPermissions && (
+        <PermissionsModal
+          fileId={selectedFileId}
+          accessToken={localStorage.getItem('accessToken')}
+          fileName={selectedFileName}
+          onClose={() => setShowPermissions(false)}
+        />
+      )}
+
+
     </main>
   );
 };
 
+// Wraps your app with Google’s OAuth context using your client ID.
 const App = () => (
   <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
     <AppContent />
