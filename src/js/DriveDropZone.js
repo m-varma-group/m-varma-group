@@ -119,7 +119,7 @@ const DriveDropZone = ({
                             }}
                             title="Manage permissions"
                           >
-                            <span role="img" aria-label="Permissions">🔓</span>
+                            <span role="img" aria-label="Permission Settings">⚙️</span>
                           </button>
 
 
