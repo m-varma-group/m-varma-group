@@ -12,6 +12,8 @@ const PermissionsModal = ({ fileId, fileName, accessToken, onClose }) => {
   const [newPermissionRole, setNewPermissionRole] = useState('reader');
   const [loading, setLoading] = useState(true);
   const [fadeOut, setFadeOut] = useState(false);
+  const [isFolder, setIsFolder] = useState(false);
+
 
   useEffect(() => {
     fetchPermissions();
@@ -21,14 +23,7 @@ const PermissionsModal = ({ fileId, fileName, accessToken, onClose }) => {
   const fetchPermissions = async () => {
     try {
       const fileRes = await axios.get(
-        `https://www.googleapis.com/drive/v3/files/${fileId}?fields=copyRequiresWriterPermission,writersCanShare`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }
-      );
-
-      const permsRes = await axios.get(
-        `https://www.googleapis.com/drive/v3/files/${fileId}/permissions?fields=permissions(id,emailAddress,role,type)`,
+        `https://www.googleapis.com/drive/v3/files/${fileId}?fields=copyRequiresWriterPermission,writersCanShare,mimeType`,
         {
           headers: { Authorization: `Bearer ${accessToken}` },
         }
@@ -36,6 +31,14 @@ const PermissionsModal = ({ fileId, fileName, accessToken, onClose }) => {
 
       setCopyRequiresWriterPermission(fileRes.data.copyRequiresWriterPermission);
       setWritersCanShare(fileRes.data.writersCanShare);
+      setIsFolder(fileRes.data.mimeType === 'application/vnd.google-apps.folder');
+      
+      const permsRes = await axios.get(
+        `https://www.googleapis.com/drive/v3/files/${fileId}/permissions?fields=permissions(id,emailAddress,role,type)`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
 
       const perms = permsRes.data.permissions || [];
       setPermissions(perms);
@@ -49,6 +52,7 @@ const PermissionsModal = ({ fileId, fileName, accessToken, onClose }) => {
       setLoading(false);
     }
   };
+
 
   const addPermission = async () => {
     if (!newPermissionEmail) return;
@@ -89,7 +93,19 @@ const PermissionsModal = ({ fileId, fileName, accessToken, onClose }) => {
   };
 
   const updateFileSettings = async () => {
-    try {
+  try {
+
+    const fileMeta = await axios.get(
+      `https://www.googleapis.com/drive/v3/files/${fileId}?fields=mimeType`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+
+    const isFolder = fileMeta.data.mimeType === 'application/vnd.google-apps.folder';
+
+    if (!isFolder) {
+      // If it's a file, update it directly
       await axios.patch(
         `https://www.googleapis.com/drive/v3/files/${fileId}`,
         {
@@ -103,10 +119,44 @@ const PermissionsModal = ({ fileId, fileName, accessToken, onClose }) => {
           },
         }
       );
-    } catch (error) {
-      console.error('Error updating file settings:', error);
+    } else {
+
+      const res = await axios.get(
+        `https://www.googleapis.com/drive/v3/files?q='${fileId}'+in+parents+and+trashed=false&fields=files(id,name,mimeType)`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+
+      const children = res.data.files;
+
+      const filesOnly = children.filter(child => child.mimeType !== 'application/vnd.google-apps.folder');
+
+      await Promise.all(
+        filesOnly.map((file) =>
+          axios.patch(
+            `https://www.googleapis.com/drive/v3/files/${file.id}`,
+            {
+              copyRequiresWriterPermission,
+              writersCanShare,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+              },
+            }
+          ).catch((err) => {
+            console.error(`Error updating file ${file.id}:`, err);
+          })
+        )
+      );
     }
-  };
+  } catch (error) {
+    console.error('Error updating file/folder settings:', error);
+  }
+};
+
 
   const handleAccessLevelChange = async (e) => {
     const newAccessLevel = e.target.value;
@@ -189,20 +239,22 @@ const PermissionsModal = ({ fileId, fileName, accessToken, onClose }) => {
         <div>
           <p>Permissions:</p>
           <div className="radio-group">
-            <label>
-              <input
-                type="radio"
-                name="sharingOptions"
-                value="enable"
-                checked={writersCanShare && !copyRequiresWriterPermission}
-                onChange={() => {
-                  setWritersCanShare(true);
-                  setCopyRequiresWriterPermission(false);
-                }}
-              />
-              Allow users to download/print/copy
-            </label>
-            <br />
+            {!isFolder && (
+              <label>
+                <input
+                  type="radio"
+                  name="sharingOptions"
+                  value="enable"
+                  checked={writersCanShare && !copyRequiresWriterPermission}
+                  onChange={() => {
+                    setWritersCanShare(true);
+                    setCopyRequiresWriterPermission(false);
+                  }}
+                />
+                Allow users to download/print/copy
+              </label>
+            )}
+            {isFolder && <br />}
             <label>
               <input
                 type="radio"
@@ -218,6 +270,8 @@ const PermissionsModal = ({ fileId, fileName, accessToken, onClose }) => {
             </label>
           </div>
         </div>
+
+
 
         <div className="permissions-modal-actions">
           <button className="save-close-permission-button" onClick={handleSaveSettings}>
