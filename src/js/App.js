@@ -1,6 +1,8 @@
 // React hooks, CSS styles, and component imports
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import QRLandingPage from './QRLandingPage';
 import '../css/App.css';
 import '../css/UploadModal.css';
 
@@ -432,10 +434,24 @@ const AppContent = () => {
   );
 };
 
+const AppRoutes = () => {
+  return (
+    <Routes>
+      {/* Fullscreen public route */}
+      <Route path="/qr/:id" element={<QRLandingPage />} />
+      
+      {/* Everything else needs login */}
+      <Route path="*" element={<AppContent />} />
+    </Routes>
+  );
+};
+
 // Wraps your app with Google’s OAuth context using your client ID.
 const App = () => (
   <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
-    <AppContent />
+    <Router>
+      <AppRoutes />
+    </Router>
   </GoogleOAuthProvider>
 );
 

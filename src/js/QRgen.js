@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import QRCodeStyling from 'qr-code-styling';
 import { truncateFileName } from './utils.js';
+import { db } from '../firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { nanoid } from 'nanoid';
 import '../css/QRgen.css';
 
 const QRgen = ({ fileId, isFolder, fileName }) => {
@@ -11,39 +14,40 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
   const qrRef = useRef(null);
   const qrInstance = useRef(null);
 
+  // Google Drive shareable link
   const baseUrl = isFolder
     ? `https://drive.google.com/drive/folders/${fileId}`
     : `https://drive.google.com/file/d/${fileId}/view`;
 
   const safeName = fileName.replace(/[^\w\d_.-]/g, '_');
 
+  // Initialize QR code once
   useEffect(() => {
     if (!qrInstance.current) {
       qrInstance.current = new QRCodeStyling({
         width: 200,
         height: 200,
-        data: baseUrl,
+        data: '', // Will set after metadata is saved
         image: '/logo.png',
         dotsOptions: { color: '#000', type: 'rounded' },
         backgroundOptions: { color: '#ffffff' },
         imageOptions: {
           crossOrigin: 'anonymous',
           margin: 0,
-          imageSize: 0.6,
+          imageSize: 0.4,
         },
         qrOptions: { errorCorrectionLevel: 'H' },
       });
-    } else {
-      qrInstance.current.update({
-        data: baseUrl,
-      });
     }
+  }, []);
 
-    if (qrRef.current && showQR) {
+  // Append QR to DOM when shown
+  useEffect(() => {
+    if (qrRef.current && qrInstance.current && showQR) {
       qrRef.current.innerHTML = '';
       qrInstance.current.append(qrRef.current);
     }
-  }, [baseUrl, showQR]);
+  }, [showQR]);
 
   const downloadQR = () => {
     qrInstance.current.download({
@@ -56,18 +60,35 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
     setShowInputModal(true);
   };
 
-  const handleConfirmInputs = () => {
+  const handleConfirmInputs = async () => {
     if (!expiration) {
       alert('Please enter an expiration date and time.');
       return;
     }
 
-    // Placeholder for future backend logic
-    console.log('Message:', message);
-    console.log('Expiration:', expiration);
+    const shortId = nanoid(8); // Unique QR ID
 
-    setShowInputModal(false);
-    setShowQR(true);
+    const qrMetadata = {
+      message,
+      expiration: new Date(expiration),
+      targetUrl: baseUrl,
+      createdAt: serverTimestamp(),
+    };
+
+    try {
+      await setDoc(doc(db, 'qrCodes', shortId), qrMetadata);
+      console.log('QR metadata saved with ID:', shortId);
+
+      // This is the URL users will be redirected to when they scan the QR
+      const landingPageUrl = `${window.location.origin}/qr/${shortId}`;
+      qrInstance.current.update({ data: landingPageUrl });
+
+      setShowInputModal(false);
+      setShowQR(true);
+    } catch (err) {
+      console.error('Error saving QR metadata:', err);
+      alert('Failed to generate QR. Please try again.');
+    }
   };
 
   return (
