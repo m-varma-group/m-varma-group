@@ -1,4 +1,4 @@
-.qr-modal-overlay {
+.custom-qr-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -12,7 +12,7 @@
   z-index: 9999
 }
 
-.qr-modal {
+.custom-qr-modal {
   background: #ffffff;
   padding: 16px 20px;
   border-radius: 12px;
@@ -23,13 +23,13 @@
   animation: fadeIn 0.2s ease-in-out;
 }
 
-.qr-modal h3 {
+.custom-qr-modal h3 {
   margin: 0 0 16px;
   font-size: 1.25rem;
   color: #333;
 }
 
-.qr-input-url {
+.custom-qr-input-url {
   width: 100%;
   padding: 10px;
   margin-bottom: 20px;
@@ -39,7 +39,7 @@
   box-sizing: border-box;
 }
 
-.qr-input-filename {
+.custom-qr-input-filename {
   width: 100%;
   padding: 10px;
   margin-top: 20px;
@@ -49,13 +49,13 @@
   box-sizing: border-box;
 }
 
-.qr-preview {
+.custom-qr-preview {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.qr-button-row {
+.custom-qr-button-row {
   display: flex;
   justify-content: space-between;
   gap: 1px;
@@ -63,7 +63,7 @@
   width: 102%;
 }
 
-.qr-button-row button {
+.custom-qr-button-row button {
   flex: 1;
   padding: 8px 20px;
   font-size: 0.95rem;
@@ -75,11 +75,11 @@
   background-color: #007bff;
 }
 
-.qr-button-row button:last-child {
+.custom-qr-button-row button:last-child {
   background-color: #6c757d;
 }
 
-.qr-button-row button:hover {
+.custom-qr-button-row button:hover {
   opacity: 0.9;
 }
 
@@ -105,6 +105,6 @@
   }
 }
 
-.qr-modal.fade-out {
+.custom-qr-modal.fade-out {
   animation: fadeOut 0.2s ease-in-out forwards;
 }

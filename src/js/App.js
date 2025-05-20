@@ -186,8 +186,10 @@ const AppContent = () => {
 
   // Asks for confirmation before deleting a file or folder from Google Drive.
   const handleDelete = async (fileId, fileName) => {
-    const confirmation = window.prompt(`Type DELETE to confirm deletion of "${fileName}":`).toLowerCase();
-    if (confirmation !== 'delete') {
+    const confirmation = window.prompt(`Type DELETE to confirm deletion of "${fileName}":`);
+
+    // Check if the user cancelled the prompt
+    if (!confirmation || confirmation.toLowerCase() !== 'delete') {
       alert('Deletion cancelled.');
       return;
     }
@@ -196,10 +198,12 @@ const AppContent = () => {
       await deleteFile(fileId, accessToken);
       alert(`"${fileName}" deleted successfully.`);
       loadFiles(currentFolderId);
-    } catch {
+    } catch (error) {
+      console.error('Error deleting file:', error);
       alert('Error deleting file.');
     }
   };
+
 
   // Navigates into subfolders or back to parent folders using a stack-based approach.
   const handleFolderClick = (folder) => {

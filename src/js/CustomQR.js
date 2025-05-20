@@ -83,10 +83,10 @@ const CustomQR = ({ customLink, setCustomLink, onClose }) => {
   };
 
   return (
-    <div className="qr-modal-overlay" onClick={handleClose}>
+    <div className="custom-qr-modal-overlay" onClick={handleClose}>
       {/* Main modal container with fade effect */}
       <div
-        className={`qr-modal ${fadeOut ? 'fade-out' : ''}`}
+        className={`custom-qr-modal ${fadeOut ? 'fade-out' : ''}`}
         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal
       >
         <h3>Add a Link to Generate QR</h3>
@@ -94,7 +94,7 @@ const CustomQR = ({ customLink, setCustomLink, onClose }) => {
         {/* Input for custom link */}
         <input
           type="text"
-          className="qr-input-url"
+          className="custom-qr-input-url"
           placeholder="Enter any URL"
           value={customLink}
           onChange={(e) => setCustomLink(e.target.value)}
@@ -102,20 +102,20 @@ const CustomQR = ({ customLink, setCustomLink, onClose }) => {
 
         {/* QR preview and controls: only shown when there's a link */}
         {customLink && (
-          <div className="qr-preview">
+          <div className="custom-qr-preview">
             <div ref={qrRef} /> {/* QR will be injected here */}
 
             {/* Optional file name input */}
             <input
               type="text"
-              className="qr-input-filename"
+              className="custom-qr-input-filename"
               placeholder="File name (optional)"
               value={fileName}
               onChange={(e) => setFileName(e.target.value)}
             />
 
             {/* Button row: Download, Clear, Close */}
-            <div className="qr-button-row">
+            <div className="custom-qr-button-row">
               <button onClick={downloadQR}>Download</button>
               <button onClick={handleClear}>Clear</button>
               <button onClick={handleClose}>Close</button>

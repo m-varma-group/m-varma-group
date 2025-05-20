@@ -4,44 +4,44 @@ import { truncateFileName } from './utils.js';
 import { db } from '../firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
+import { Editor } from '@tinymce/tinymce-react';
 import '../css/QRgen.css';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 const QRgen = ({ fileId, isFolder, fileName }) => {
   const [showInputModal, setShowInputModal] = useState(false);
   const [showQR, setShowQR] = useState(false);
-  const [message, setMessage] = useState('');
-  const [expiration, setExpiration] = useState('');
+  const [expiration, setExpiration] = useState(new Date());
   const qrRef = useRef(null);
   const qrInstance = useRef(null);
+  const editorRef = useRef(null);
 
-  // Google Drive shareable link
   const baseUrl = isFolder
     ? `https://drive.google.com/drive/folders/${fileId}`
     : `https://drive.google.com/file/d/${fileId}/view`;
 
   const safeName = fileName.replace(/[^\w\d_.-]/g, '_');
 
-  // Initialize QR code once
   useEffect(() => {
     if (!qrInstance.current) {
       qrInstance.current = new QRCodeStyling({
         width: 200,
         height: 200,
-        data: '', // Will set after metadata is saved
+        data: '',
         image: '/logo.png',
         dotsOptions: { color: '#000', type: 'rounded' },
         backgroundOptions: { color: '#ffffff' },
         imageOptions: {
           crossOrigin: 'anonymous',
           margin: 0,
-          imageSize: 0.4,
+          imageSize: 0.5,
         },
         qrOptions: { errorCorrectionLevel: 'H' },
       });
     }
   }, []);
 
-  // Append QR to DOM when shown
   useEffect(() => {
     if (qrRef.current && qrInstance.current && showQR) {
       qrRef.current.innerHTML = '';
@@ -66,10 +66,11 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
       return;
     }
 
-    const shortId = nanoid(8); // Unique QR ID
+    const shortId = nanoid(8);
+    const content = editorRef.current.getContent();
 
     const qrMetadata = {
-      message,
+      message: content,
       expiration: new Date(expiration),
       targetUrl: baseUrl,
       createdAt: serverTimestamp(),
@@ -79,7 +80,6 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
       await setDoc(doc(db, 'qrCodes', shortId), qrMetadata);
       console.log('QR metadata saved with ID:', shortId);
 
-      // This is the URL users will be redirected to when they scan the QR
       const landingPageUrl = `${window.location.origin}/qr/${shortId}`;
       qrInstance.current.update({ data: landingPageUrl });
 
@@ -103,22 +103,34 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
           <div className="qr-modal">
             <h3>QR Options for "{truncateFileName(fileName)}"</h3>
 
-            <textarea
-              className="qr-input-url"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={3}
-              placeholder="Enter message to associate with this QR (optional)"
+            <p> Add a Note </p>
+            <Editor
+              tinymceScriptSrc={`${process.env.PUBLIC_URL}/tinymce/tinymce.min.js`}
+              onInit={(evt, editor) => editorRef.current = editor}
+              init={{
+                height: 400,
+                width: 600,
+                menubar: false,
+                plugins: 'link lists fullscreen',
+                toolbar:
+                  'undo redo | formatselect | bold italic underline HR | alignleft aligncenter alignright | bullist numlist | fullscreen',
+                branding: false
+              }}
             />
 
-            <input
+
+            
+            <p> Set Expiry </p>
+            <DatePicker
+              selected={expiration}
+              onChange={(date) => setExpiration(date)}
+              showTimeSelect
+              timeFormat="hh:mm aa"
+              timeIntervals={15}
+              dateFormat="dd MMMM yyyy, hh:mm aa"
+              placeholderText="Select expiration date & time"
               className="qr-input-expiry"
-              type="datetime-local"
-              value={expiration}
-              onChange={(e) => setExpiration(e.target.value)}
-              required
             />
-
             <div className="qr-button-row">
               <button onClick={handleConfirmInputs}>Generate</button>
               <button onClick={() => setShowInputModal(false)}>Cancel</button>
