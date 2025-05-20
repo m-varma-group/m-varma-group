@@ -11,44 +11,69 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 9999;
 }
 
-.qr-modal-gen {
+.qr-modal {
   background: #ffffff;
-  padding: 16px 0px;
+  padding: 16px 20px;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   text-align: center;
   max-width: 300px;
-  width: 70%;
+  width: 80%;
   animation: fadeIn 0.2s ease-in-out;
 }
 
 .qr-modal h3 {
-  margin-top: 0;
+  margin: 0 0 16px;
   font-size: 1.25rem;
   color: #333;
 }
 
-.qr-modal button {
-  margin-top: 12px;
-  margin-right: 8px;
-  padding: 8px 14px;
+.qr-input-url,
+.qr-input-expiry {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 16px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.qr-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.qr-button-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 0px;
+  width: 100%;
+}
+
+.qr-button-row button {
+  flex: 1;
+  padding: 8px 20px;
   font-size: 0.95rem;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  background-color: #007bff;
-  color: white;
   transition: background-color 0.2s;
+  color: white;
+  background-color: #007bff;
 }
 
-.qr-modal button:last-child {
+.qr-button-row button:last-child {
   background-color: #6c757d;
 }
 
-.qr-modal button:hover {
+.qr-button-row button:hover {
   opacity: 0.9;
 }
 
@@ -61,4 +86,19 @@
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+@keyframes fadeOut {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+}
+
+.qr-modal.fade-out {
+  animation: fadeOut 0.2s ease-in-out forwards;
 }
