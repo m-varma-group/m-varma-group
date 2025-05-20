@@ -62,7 +62,7 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
       return;
     }
 
-    // Placeholder: You will send this info to backend in the next step
+    // Placeholder for future backend logic
     console.log('Message:', message);
     console.log('Expiration:', expiration);
 
@@ -79,46 +79,45 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
       {/* Input Modal */}
       {showInputModal && (
         <div className="qr-modal-overlay" onClick={(e) => e.stopPropagation()}>
-          <div className="qr-modal-gen">
+          <div className="qr-modal">
             <h3>QR Options for "{truncateFileName(fileName)}"</h3>
 
-            <label>
-              Optional Message:
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                rows={3}
-                placeholder="Enter message to associate with this QR (optional)"
-              />
-            </label>
+            <textarea
+              className="qr-input-url"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={3}
+              placeholder="Enter message to associate with this QR (optional)"
+            />
 
-            <label>
-              Expiration Time:
-              <input
-                type="datetime-local"
-                value={expiration}
-                onChange={(e) => setExpiration(e.target.value)}
-                required
-              />
-            </label>
+            <input
+              className="qr-input-expiry"
+              type="datetime-local"
+              value={expiration}
+              onChange={(e) => setExpiration(e.target.value)}
+              required
+            />
 
-            <button onClick={handleConfirmInputs}>Generate QR</button>
-            <button onClick={() => setShowInputModal(false)}>Cancel</button>
+            <div className="qr-button-row">
+              <button onClick={handleConfirmInputs}>Generate</button>
+              <button onClick={() => setShowInputModal(false)}>Cancel</button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* QR Modal */}
+      {/* QR Preview Modal */}
       {showQR && (
         <div className="qr-modal-overlay" onClick={(e) => e.stopPropagation()}>
-          <div className="qr-modal-gen">
+          <div className="qr-modal">
             <h3>QR for "{truncateFileName(fileName)}"</h3>
 
-            <div className="qr-preview-container" ref={qrRef}></div>
+            <div className="qr-preview" ref={qrRef}></div>
 
-
-            <button onClick={downloadQR}>Download QR</button>
-            <button onClick={() => setShowQR(false)}>Close</button>
+            <div className="qr-button-row">
+              <button onClick={downloadQR}>Download</button>
+              <button onClick={() => setShowQR(false)}>Close</button>
+            </div>
           </div>
         </div>
       )}
