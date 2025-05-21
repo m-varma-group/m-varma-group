@@ -31,8 +31,7 @@
   color: #333;
 }
 
-.qr-input-url,
-.qr-input-expiry {
+.qr-input-url {
   width: 100%;
   padding: 10px;
   margin-bottom: 16px;
@@ -102,3 +101,10 @@
 .qr-modal.fade-out {
   animation: fadeOut 0.2s ease-in-out forwards;
 }
+
+.qr-input-expiry {
+  width: 600px !important;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+

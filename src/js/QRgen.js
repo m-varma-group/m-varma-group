@@ -13,6 +13,9 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
   const [showInputModal, setShowInputModal] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [expiration, setExpiration] = useState(new Date());
+  const [fadeOutInputModal, setFadeOutInputModal] = useState(false);
+  const [fadeOutQRModal, setFadeOutQRModal] = useState(false);
+
   const qrRef = useRef(null);
   const qrInstance = useRef(null);
   const editorRef = useRef(null);
@@ -58,6 +61,7 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
 
   const handleGenerateClick = () => {
     setShowInputModal(true);
+    setFadeOutInputModal(false);
   };
 
   const handleConfirmInputs = async () => {
@@ -83,11 +87,31 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
       const landingPageUrl = `${window.location.origin}/qr/${shortId}`;
       qrInstance.current.update({ data: landingPageUrl });
 
-      setShowInputModal(false);
-      setShowQR(true);
+      setFadeOutInputModal(true);
+      setTimeout(() => {
+        setShowInputModal(false);
+        setShowQR(true);
+        setFadeOutQRModal(false);
+      }, 200);
     } catch (err) {
       console.error('Error saving QR metadata:', err);
       alert('Failed to generate QR. Please try again.');
+    }
+  };
+
+  const handleCloseInputModal = () => {
+    setFadeOutInputModal(true);
+    setTimeout(() => setShowInputModal(false), 200);
+  };
+
+  const handleCloseQRModal = () => {
+    setFadeOutQRModal(true);
+    setTimeout(() => setShowQR(false), 200);
+  };
+
+  const handleOverlayClick = (e, type) => {
+    if (e.target.classList.contains('qr-modal-overlay')) {
+      type === 'input' ? handleCloseInputModal() : handleCloseQRModal();
     }
   };
 
@@ -99,11 +123,14 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
 
       {/* Input Modal */}
       {showInputModal && (
-        <div className="qr-modal-overlay" onClick={(e) => e.stopPropagation()}>
-          <div className="qr-modal">
+        <div
+          className="qr-modal-overlay"
+          onClick={(e) => handleOverlayClick(e, 'input')}
+        >
+          <div className={`qr-modal ${fadeOutInputModal ? 'fade-out' : ''}`} onClick={(e) => e.stopPropagation()}>
             <h3>QR Options for "{truncateFileName(fileName)}"</h3>
 
-            <p> Add a Note </p>
+            <p>Add a Note</p>
             <Editor
               tinymceScriptSrc={`${process.env.PUBLIC_URL}/tinymce/tinymce.min.js`}
               onInit={(evt, editor) => editorRef.current = editor}
@@ -113,14 +140,12 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
                 menubar: false,
                 plugins: 'link lists fullscreen',
                 toolbar:
-                  'undo redo | formatselect | bold italic underline HR | alignleft aligncenter alignright | bullist numlist | fullscreen',
+                  'undo redo | formatselect | bold italic underline HR | alignleft aligncenter alignright | bullist | fullscreen',
                 branding: false
               }}
             />
 
-
-            
-            <p> Set Expiry </p>
+            <p>Set Expiry</p>
             <DatePicker
               selected={expiration}
               onChange={(date) => setExpiration(date)}
@@ -131,9 +156,10 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
               placeholderText="Select expiration date & time"
               className="qr-input-expiry"
             />
+
             <div className="qr-button-row">
               <button onClick={handleConfirmInputs}>Generate</button>
-              <button onClick={() => setShowInputModal(false)}>Cancel</button>
+              <button onClick={handleCloseInputModal}>Cancel</button>
             </div>
           </div>
         </div>
@@ -141,15 +167,18 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
 
       {/* QR Preview Modal */}
       {showQR && (
-        <div className="qr-modal-overlay" onClick={(e) => e.stopPropagation()}>
-          <div className="qr-modal">
+        <div
+          className="qr-modal-overlay"
+          onClick={(e) => handleOverlayClick(e, 'qr')}
+        >
+          <div className={`qr-modal ${fadeOutQRModal ? 'fade-out' : ''}`} onClick={(e) => e.stopPropagation()}>
             <h3>QR for "{truncateFileName(fileName)}"</h3>
 
             <div className="qr-preview" ref={qrRef}></div>
 
             <div className="qr-button-row">
               <button onClick={downloadQR}>Download</button>
-              <button onClick={() => setShowQR(false)}>Close</button>
+              <button onClick={handleCloseQRModal}>Close</button>
             </div>
           </div>
         </div>
