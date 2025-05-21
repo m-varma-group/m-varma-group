@@ -32,13 +32,13 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
         width: 200,
         height: 200,
         data: '',
-        image: '/logo.png',
+        image: '/logo2.2.jpg',
         dotsOptions: { color: '#000', type: 'rounded' },
         backgroundOptions: { color: '#ffffff' },
         imageOptions: {
           crossOrigin: 'anonymous',
           margin: 0,
-          imageSize: 0.5,
+          imageSize: 0.8,
         },
         qrOptions: { errorCorrectionLevel: 'H' },
       });
