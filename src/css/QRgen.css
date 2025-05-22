@@ -49,6 +49,7 @@
 }
 
 .qr-button-row {
+  max-width: 600px;
   display: flex;
   justify-content: space-between;
   gap: 8px;
@@ -102,7 +103,8 @@
   animation: fadeOut 0.2s ease-in-out forwards;
 }
 
-.qr-input-expiry {
+.qr-input-expiry,
+.qr-input-password {
   width: 600px !important;
   max-width: 100%;
   box-sizing: border-box;

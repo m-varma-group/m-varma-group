@@ -10,6 +10,9 @@ const QRLandingPage = () => {
   const [timeLeft, setTimeLeft] = useState(null);
   const [expired, setExpired] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordValid, setPasswordValid] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
 
   useEffect(() => {
     const fetchQRData = async () => {
@@ -23,23 +26,28 @@ const QRLandingPage = () => {
       }
 
       const qrData = docSnap.data();
-      const expirationTime = qrData.expiration.toDate();
-      const now = new Date();
 
-      if (now > expirationTime) {
-        setExpired(true);
-        setLoading(false);
-        return;
+      // Check for expiration if it exists
+      if (qrData.expiration) {
+        const expirationTime = qrData.expiration.toDate();
+        const now = new Date();
+
+        if (now > expirationTime) {
+          setExpired(true);
+          setLoading(false);
+          return;
+        }
+
+        updateCountdown(expirationTime);
       }
 
       setData(qrData);
       setLoading(false);
-      updateCountdown(expirationTime);
     };
 
     fetchQRData();
   }, [id]);
-
+  
   const updateCountdown = (expirationTime) => {
     const interval = setInterval(() => {
       const now = new Date();
@@ -60,6 +68,20 @@ const QRLandingPage = () => {
     }, 1000);
   };
 
+  const handlePasswordSubmit = () => {
+    if (passwordInput === data.password) {
+      setPasswordValid(true);
+      setPasswordError('');
+    } else {
+      setPasswordError('Incorrect password. Please try again.');
+
+      // Clear error after 5 seconds
+      setTimeout(() => {
+        setPasswordError('');
+      }, 5000);
+    }
+  };
+
   const handleContinue = () => {
     window.location.href = data.targetUrl;
   };
@@ -70,24 +92,52 @@ const QRLandingPage = () => {
   return (
     <div className="qr-landing-wrapper">
       <div className="qr-landing-container">
+
+        {/* Optional Message */}
         {data.message && data.message.trim() !== '' && (
           <>
             <h2>NOTE</h2>
             <div
               className="qr-landing-message"
-              dangerouslySetInnerHTML={{
-                __html: data.message,
-              }}
+              dangerouslySetInnerHTML={{ __html: data.message }}
             ></div>
           </>
         )}
 
-        <h3 className="qr-landing-validity">⚠️ LINK EXPIRES IN</h3>
-        <p>{timeLeft}</p>
+        {/* Optional Expiry Countdown */}
+        {data.expiration && (
+          <>
+            <h3 className="qr-landing-validity">⚠️ LINK EXPIRES IN</h3>
+            <p>{timeLeft}</p>
+          </>
+        )}
 
-        <button className="qr-landing-button" onClick={handleContinue}>
-          Continue
-        </button>
+        {/* Optional Password Protection */}
+        {data.password && !passwordValid && (
+          <div className="qr-password-section">
+            <input
+              type="password"
+              placeholder="Enter password to continue"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handlePasswordSubmit();
+              }}
+              className="qr-password-input"
+            />
+            {passwordError && <p className="qr-password-error">{passwordError}</p>}
+            <button onClick={handlePasswordSubmit} className="qr-password-submit">
+              Submit
+            </button>
+          </div>
+        )}
+
+        {/* Continue Button if no password or password validated */}
+        {(!data.password || passwordValid) && (
+          <button className="qr-landing-button" onClick={handleContinue}>
+            Continue
+          </button>
+        )}
       </div>
     </div>
   );

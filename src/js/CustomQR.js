@@ -7,7 +7,7 @@ const qrCode = new QRCodeStyling({
   width: 200,
   height: 200,
   type: 'canvas',
-  image: '/logo2.2.jpg', // Optional logo in center
+  image: '/logo2.2.png', // Optional logo in center
   qrOptions: {
     errorCorrectionLevel: 'H', // High error correction level
     margin: 16,
@@ -21,7 +21,7 @@ const qrCode = new QRCodeStyling({
   },
   imageOptions: {
     crossOrigin: 'anonymous',
-    imageSize: 0.8, // Scale of logo in the center
+    imageSize: 0.4, // Scale of logo in the center
   },
 });
 

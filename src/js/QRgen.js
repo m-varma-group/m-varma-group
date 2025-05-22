@@ -12,9 +12,14 @@ import 'react-datepicker/dist/react-datepicker.css';
 const QRgen = ({ fileId, isFolder, fileName }) => {
   const [showInputModal, setShowInputModal] = useState(false);
   const [showQR, setShowQR] = useState(false);
-  const [expiration, setExpiration] = useState(new Date());
+  const [expiration, setExpiration] = useState(null);
+  const [password, setPassword] = useState('');
   const [fadeOutInputModal, setFadeOutInputModal] = useState(false);
   const [fadeOutQRModal, setFadeOutQRModal] = useState(false);
+
+  const [enableNote, setEnableNote] = useState(false);
+  const [enableExpiry, setEnableExpiry] = useState(false);
+  const [enablePassword, setEnablePassword] = useState(false);
 
   const qrRef = useRef(null);
   const qrInstance = useRef(null);
@@ -32,13 +37,13 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
         width: 200,
         height: 200,
         data: '',
-        image: '/logo2.2.jpg',
-        dotsOptions: { color: '#000', type: 'rounded' },
+        image: '/logo2.2.png',
+        dotsOptions: { color: '#000', type: 'square' },
         backgroundOptions: { color: '#ffffff' },
         imageOptions: {
           crossOrigin: 'anonymous',
           margin: 0,
-          imageSize: 0.8,
+          imageSize: 0.4,
         },
         qrOptions: { errorCorrectionLevel: 'H' },
       });
@@ -65,20 +70,22 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
   };
 
   const handleConfirmInputs = async () => {
-    if (!expiration) {
+    if (enableExpiry && !expiration) {
       alert('Please enter an expiration date and time.');
       return;
     }
 
     const shortId = nanoid(8);
-    const content = editorRef.current.getContent();
+    const content = enableNote ? editorRef.current.getContent() : '';
 
     const qrMetadata = {
-      message: content,
-      expiration: new Date(expiration),
       targetUrl: baseUrl,
       createdAt: serverTimestamp(),
     };
+
+    if (enableNote) qrMetadata.message = content;
+    if (enableExpiry) qrMetadata.expiration = new Date(expiration);
+    if (enablePassword) qrMetadata.password = password;
 
     try {
       await setDoc(doc(db, 'qrCodes', shortId), qrMetadata);
@@ -130,32 +137,63 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
           <div className={`qr-modal ${fadeOutInputModal ? 'fade-out' : ''}`} onClick={(e) => e.stopPropagation()}>
             <h3>QR Options for "{truncateFileName(fileName)}"</h3>
 
-            <p>Add a Note</p>
-            <Editor
-              tinymceScriptSrc={`${process.env.PUBLIC_URL}/tinymce/tinymce.min.js`}
-              onInit={(evt, editor) => editorRef.current = editor}
-              init={{
-                height: 400,
-                width: 600,
-                menubar: false,
-                plugins: 'link lists fullscreen',
-                toolbar:
-                  'undo redo | formatselect | bold italic underline HR | alignleft aligncenter alignright | bullist | fullscreen',
-                branding: false
-              }}
-            />
+            <div className="qr-options-row">
+              <label><input type="checkbox" checked={enableNote} onChange={() => setEnableNote(!enableNote)} /> Add Note</label>
+              <label><input type="checkbox" checked={enableExpiry} onChange={() => setEnableExpiry(!enableExpiry)} /> Set Expiry</label>
+              <label><input type="checkbox" checked={enablePassword} onChange={() => setEnablePassword(!enablePassword)} /> Set Password</label>
+            </div>
 
-            <p>Set Expiry</p>
-            <DatePicker
-              selected={expiration}
-              onChange={(date) => setExpiration(date)}
-              showTimeSelect
-              timeFormat="hh:mm aa"
-              timeIntervals={15}
-              dateFormat="dd MMMM yyyy, hh:mm aa"
-              placeholderText="Select expiration date & time"
-              className="qr-input-expiry"
-            />
+            {enableNote && (
+              <>
+                <p>Add a Note</p>
+                <Editor
+                  tinymceScriptSrc={`${process.env.PUBLIC_URL}/tinymce/tinymce.min.js`}
+                  onInit={(evt, editor) => editorRef.current = editor}
+                  init={{
+                    height: 400,
+                    width: 600,
+                    menubar: false,
+                    plugins: 'link lists fullscreen',
+                    toolbar:
+                      'undo redo | formatselect | bold italic underline HR | alignleft aligncenter alignright | bullist | fullscreen',
+                    branding: false
+                  }}
+                />
+              </>
+            )}
+
+            {enableExpiry && (
+              <>
+                <p>Set Expiry</p>
+                <DatePicker
+                  selected={expiration}
+                  onChange={(date) => setExpiration(date)}
+                  showTimeSelect
+                  timeFormat="hh:mm aa"
+                  timeIntervals={15}
+                  dateFormat="dd MMMM yyyy, hh:mm aa"
+                  placeholderText="Select expiration date & time"
+                  className="qr-input-expiry"
+                  calendarClassName="qr-datepicker-calendar"
+                  popperPlacement="bottom"
+                />
+              </>
+            )}
+
+            {enablePassword && (
+              <>
+                <p>Set Password</p>
+                <input
+                  type="text"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter password"
+                  className="qr-input-password"
+                />
+              </>
+            )}
+
+            <p></p>
 
             <div className="qr-button-row">
               <button onClick={handleConfirmInputs}>Generate</button>
