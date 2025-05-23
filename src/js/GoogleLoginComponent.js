@@ -1,4 +1,4 @@
-
+//GoogleLoginComponent.js
 import React from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 
