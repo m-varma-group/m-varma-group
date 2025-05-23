@@ -7,11 +7,9 @@ import '../css/QRLandingPage.css';
 const QRLandingPage = () => {
   const { id } = useParams();
   const [data, setData] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(null);
   const [expired, setExpired] = useState(false);
   const [loading, setLoading] = useState(true);
   const [passwordInput, setPasswordInput] = useState('');
-  const [passwordValid, setPasswordValid] = useState(false);
   const [passwordError, setPasswordError] = useState('');
 
   useEffect(() => {
@@ -30,60 +28,36 @@ const QRLandingPage = () => {
       // Check for expiration if it exists
       if (qrData.expiration) {
         const expirationTime = qrData.expiration.toDate();
-        const now = new Date();
-
-        if (now > expirationTime) {
+        if (new Date() > expirationTime) {
           setExpired(true);
           setLoading(false);
           return;
         }
-
-        updateCountdown(expirationTime);
       }
 
       setData(qrData);
       setLoading(false);
+
+      // If no password and no message, redirect immediately
+      if (!qrData.password && (!qrData.message || qrData.message.trim() === '')) {
+        window.location.href = qrData.targetUrl;
+      }
     };
 
     fetchQRData();
   }, [id]);
-  
-  const updateCountdown = (expirationTime) => {
-    const interval = setInterval(() => {
-      const now = new Date();
-      const diff = expirationTime - now;
-
-      if (diff <= 0) {
-        clearInterval(interval);
-        setExpired(true);
-        return;
-      }
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const mins = Math.floor((diff / (1000 * 60)) % 60);
-      const secs = Math.floor((diff / 1000) % 60);
-
-      setTimeLeft(`${days}d ${hours}h ${mins}m ${secs}s`);
-    }, 1000);
-  };
-
-  const handlePasswordSubmit = () => {
-    if (passwordInput === data.password) {
-      setPasswordValid(true);
-      setPasswordError('');
-    } else {
-      setPasswordError('Incorrect password. Please try again.');
-
-      // Clear error after 5 seconds
-      setTimeout(() => {
-        setPasswordError('');
-      }, 5000);
-    }
-  };
 
   const handleContinue = () => {
-    window.location.href = data.targetUrl;
+    if (data.password) {
+      if (passwordInput === data.password) {
+        window.location.href = data.targetUrl;
+      } else {
+        setPasswordError('Incorrect password. Please try again.');
+        setTimeout(() => setPasswordError(''), 5000);
+      }
+    } else {
+      window.location.href = data.targetUrl;
+    }
   };
 
   if (loading) return <div>Loading...</div>;
@@ -92,8 +66,7 @@ const QRLandingPage = () => {
   return (
     <div className="qr-landing-wrapper">
       <div className="qr-landing-container">
-
-        {/* Optional Message */}
+        {/* Show Note if present */}
         {data.message && data.message.trim() !== '' && (
           <>
             <h2>NOTE</h2>
@@ -104,16 +77,8 @@ const QRLandingPage = () => {
           </>
         )}
 
-        {/* Optional Expiry Countdown */}
-        {data.expiration && (
-          <>
-            <h3 className="qr-landing-validity">⚠️ LINK EXPIRES IN</h3>
-            <p>{timeLeft}</p>
-          </>
-        )}
-
-        {/* Optional Password Protection */}
-        {data.password && !passwordValid && (
+        {/* Show Password if present */}
+        {data.password && (
           <div className="qr-password-section">
             <input
               type="password"
@@ -121,19 +86,16 @@ const QRLandingPage = () => {
               value={passwordInput}
               onChange={(e) => setPasswordInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') handlePasswordSubmit();
+                if (e.key === 'Enter') handleContinue();
               }}
               className="qr-password-input"
             />
             {passwordError && <p className="qr-password-error">{passwordError}</p>}
-            <button onClick={handlePasswordSubmit} className="qr-password-submit">
-              Submit
-            </button>
           </div>
         )}
 
-        {/* Continue Button if no password or password validated */}
-        {(!data.password || passwordValid) && (
+        {/* Show Continue Button if either note or password is present */}
+        {(data.message?.trim() || data.password) && (
           <button className="qr-landing-button" onClick={handleContinue}>
             Continue
           </button>
