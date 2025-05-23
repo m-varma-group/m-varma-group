@@ -80,6 +80,9 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
 
     const qrMetadata = {
       targetUrl: baseUrl,
+      fileId,
+      isFolder,
+      fileName,
       createdAt: serverTimestamp(),
     };
 
@@ -192,8 +195,6 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
                 />
               </>
             )}
-
-            <p></p>
 
             <div className="qr-button-row">
               <button onClick={handleConfirmInputs}>Generate</button>

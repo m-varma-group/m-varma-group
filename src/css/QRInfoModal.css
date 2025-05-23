@@ -1,0 +1,119 @@
+.qr-info-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.qr-info-modal {
+  background: #fff;
+  padding: 20px 25px;
+  width: 90%;
+  max-width: 500px;
+  border-radius: 8px;
+  position: relative;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.qr-info-modal.fade-out {
+  animation: fadeOut 0.2s ease-in-out forwards;
+}
+
+.qr-info-modal .close-btn {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.qr-info {
+  margin-top: 15px;
+}
+
+.qr-message {
+  background: #f5f5f5;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.visit-link {
+  display: inline-block;
+  margin-top: 10px;
+  color: #007bff;
+  text-decoration: underline;
+}
+
+.error {
+  color: red;
+  margin-top: 10px;
+}
+
+.qr-dropzone {
+  border: 2px dashed #aaa;
+  padding: 40px;
+  text-align: center;
+  background-color: #fafafa;
+  margin-bottom: 20px;
+  border-radius: 8px;
+}
+
+.qr-dropzone p {
+  margin: 0;
+  color: #666;
+}
+
+.upload-btn-group {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.upload-btn {
+  all: unset;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.upload-btn:hover {
+  background-color: #0056b3;
+}
+
+
+
+@keyframes fadeIn {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+}
