@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import FileEmbedding from './FileEmbedding';
 import '../css/QRLandingPage.css';
 
 const QRLandingPage = () => {
@@ -11,6 +12,7 @@ const QRLandingPage = () => {
   const [loading, setLoading] = useState(true);
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
     const fetchQRData = async () => {
@@ -25,7 +27,6 @@ const QRLandingPage = () => {
 
       const qrData = docSnap.data();
 
-      // Check for expiration if it exists
       if (qrData.expiration) {
         const expirationTime = qrData.expiration.toDate();
         if (new Date() > expirationTime) {
@@ -36,27 +37,44 @@ const QRLandingPage = () => {
       }
 
       setData(qrData);
-      setLoading(false);
-
-      // If no password and no message, redirect immediately
-      if (!qrData.password && (!qrData.message || qrData.message.trim() === '')) {
-        window.location.href = qrData.targetUrl;
+      if (!qrData.password) {
+        setAuthorized(true);
       }
+      setLoading(false);
     };
 
     fetchQRData();
+
+    const disableRightClick = (e) => e.preventDefault();
+    const disableKeys = (e) => {
+      if (
+        (e.ctrlKey && (e.key === 's' || e.key === 'u')) || 
+        e.key === 'F12'
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    document.addEventListener('contextmenu', disableRightClick);
+    document.addEventListener('keydown', disableKeys);
+
+    return () => {
+      document.removeEventListener('contextmenu', disableRightClick);
+      document.removeEventListener('keydown', disableKeys);
+    };
   }, [id]);
 
   const handleContinue = () => {
     if (data.password) {
       if (passwordInput === data.password) {
-        window.location.href = data.targetUrl;
+        setAuthorized(true);
       } else {
         setPasswordError('Incorrect password. Please try again.');
         setTimeout(() => setPasswordError(''), 5000);
       }
     } else {
-      window.location.href = data.targetUrl;
+      setAuthorized(true);
     }
   };
 
@@ -66,19 +84,17 @@ const QRLandingPage = () => {
   return (
     <div className="qr-landing-wrapper">
       <div className="qr-landing-container">
-        {/* Show Note if present */}
         {data.message && data.message.trim() !== '' && (
           <>
             <h2>NOTE</h2>
             <div
               className="qr-landing-message"
               dangerouslySetInnerHTML={{ __html: data.message }}
-            ></div>
+            />
           </>
         )}
 
-        {/* Show Password if present */}
-        {data.password && (
+        {data.password && !authorized && (
           <div className="qr-password-section">
             <input
               type="password"
@@ -91,14 +107,14 @@ const QRLandingPage = () => {
               className="qr-password-input"
             />
             {passwordError && <p className="qr-password-error">{passwordError}</p>}
+            <button className="qr-landing-button" onClick={handleContinue}>
+              Continue
+            </button>
           </div>
         )}
 
-        {/* Show Continue Button if either note or password is present */}
-        {(data.message?.trim() || data.password) && (
-          <button className="qr-landing-button" onClick={handleContinue}>
-            Continue
-          </button>
+        {authorized && (
+          <FileEmbedding url={data.targetUrl} />
         )}
       </div>
     </div>

@@ -1,0 +1,47 @@
+.file-embed-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 999;
+  background-color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-embed-container iframe {
+  width: 100%;
+  height: 85%;
+  border: none;
+  background-color: #fff;
+}
+
+/* Invisible overlay to block Google Drive pop-out button */
+.iframe-blocker {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100px;       
+  height: 150px;      
+  z-index: 1000;
+  background-color: transparent;
+  pointer-events: all;
+}
+
+/* Responsive blocker size for tablets */
+@media (max-width: 768px) {
+  .iframe-blocker {
+    width: 80px;
+    height: 150px;
+  }
+}
+
+/* Responsive blocker size for mobile */
+@media (max-width: 480px) {
+  .iframe-blocker {
+    width: 60px;
+    height: 150px;
+  }
+}
