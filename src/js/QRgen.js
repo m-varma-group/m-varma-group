@@ -16,10 +16,12 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
   const [password, setPassword] = useState('');
   const [fadeOutInputModal, setFadeOutInputModal] = useState(false);
   const [fadeOutQRModal, setFadeOutQRModal] = useState(false);
+  const [belowQRText, setBelowQRText] = useState('');
 
   const [enableNote, setEnableNote] = useState(false);
   const [enableExpiry, setEnableExpiry] = useState(false);
   const [enablePassword, setEnablePassword] = useState(false);
+  const [enableLabel, setEnableLabel] = useState(false);
 
   const qrRef = useRef(null);
   const qrInstance = useRef(null);
@@ -57,11 +59,31 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
     }
   }, [showQR]);
 
-  const downloadQR = () => {
-    qrInstance.current.download({
-      name: `${safeName}-qr`,
-      extension: 'png',
-    });
+  const downloadQR = async () => {
+    const qrCanvas = qrRef.current.querySelector('canvas');
+    if (!qrCanvas) return;
+
+    const width = qrCanvas.width;
+    const height = qrCanvas.height + 24;
+
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = width;
+    finalCanvas.height = height;
+
+    const ctx = finalCanvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+    ctx.drawImage(qrCanvas, 0, 0);
+
+    ctx.fillStyle = '#000000';
+    ctx.font = '16px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(belowQRText, width / 2, qrCanvas.height + 16);
+
+    const link = document.createElement('a');
+    link.download = `${safeName}-qr`;
+    link.href = finalCanvas.toDataURL();
+    link.click();
   };
 
   const handleGenerateClick = () => {
@@ -89,6 +111,7 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
     if (enableNote) qrMetadata.message = content;
     if (enableExpiry) qrMetadata.expiration = new Date(expiration);
     if (enablePassword) qrMetadata.password = password;
+    if (enableLabel) qrMetadata.label = belowQRText;
 
     try {
       await setDoc(doc(db, 'qrCodes', shortId), qrMetadata);
@@ -144,6 +167,7 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
               <label><input type="checkbox" checked={enableNote} onChange={() => setEnableNote(!enableNote)} /> Add Note</label>
               <label><input type="checkbox" checked={enableExpiry} onChange={() => setEnableExpiry(!enableExpiry)} /> Set Expiry</label>
               <label><input type="checkbox" checked={enablePassword} onChange={() => setEnablePassword(!enablePassword)} /> Set Password</label>
+              <label><input type="checkbox" checked={enableLabel} onChange={() => setEnableLabel(!enableLabel)} /> Set QR Label</label>
             </div>
 
             {enableNote && (
@@ -196,6 +220,23 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
               </>
             )}
 
+            {enableLabel && (
+              <>
+                <p>Set QR Label</p>
+                <textarea
+                  value={belowQRText}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 18) {
+                      setBelowQRText(e.target.value);
+                    }
+                  }}
+                  placeholder=""
+                  className="qr-input-label"
+                  maxLength={18}
+                />
+              </>
+            )}
+
             <div className="qr-button-row">
               <button onClick={handleConfirmInputs}>Generate</button>
               <button onClick={handleCloseInputModal}>Cancel</button>
@@ -214,6 +255,12 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
             <h3>QR for "{truncateFileName(fileName)}"</h3>
 
             <div className="qr-preview" ref={qrRef}></div>
+
+            {belowQRText && (
+              <p style={{ textAlign: 'center', marginTop: '2px', fontWeight: 'normal' }}>
+                {belowQRText}
+              </p>
+            )}
 
             <div className="qr-button-row">
               <button onClick={downloadQR}>Download</button>
