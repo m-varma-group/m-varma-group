@@ -46,10 +46,20 @@
 }
 
 .visit-link {
-  display: inline-block;
+  display: flex;
   margin-top: 10px;
-  color: #007bff;
-  text-decoration: underline;
+  padding: 8px 10px;
+  background-color: #007bff;
+  color: white;
+  border-radius: 4px;
+  justify-content: center;
+  gap: 10px;
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.visit-link:hover {
+  background-color: #0056b3;
 }
 
 .error {

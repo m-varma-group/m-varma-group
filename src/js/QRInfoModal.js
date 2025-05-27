@@ -14,6 +14,7 @@ const QRInfoModal = ({ onClose }) => {
   const [fadeOut, setFadeOut] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [qrImage, setQrImage] = useState(null);
+  const [qrId, setQrId] = useState(null);
 
   const modalRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -28,6 +29,7 @@ const QRInfoModal = ({ onClose }) => {
     setFileInfo(null);
     setError('');
     setQrImage(null);
+    setQrId(null);
     setShowPassword(false);
   };
 
@@ -47,10 +49,10 @@ const QRInfoModal = ({ onClose }) => {
     return fileMatch?.[1] || folderMatch?.[1] || null;
   };
 
-  const fetchQRDetails = async (qrId) => {
+  const fetchQRDetails = async (qrIdFromUrl) => {
     setLoading(true);
     try {
-      const snap = await getDoc(doc(db, 'qrCodes', qrId));
+      const snap = await getDoc(doc(db, 'qrCodes', qrIdFromUrl));
       if (!snap.exists()) {
         setError('QR code not found or expired.');
         setLoading(false);
@@ -58,7 +60,6 @@ const QRInfoModal = ({ onClose }) => {
       }
 
       const data = snap.data();
-
       const expirationDate =
         data.expiration?.toDate?.() || data.expiration || null;
 
@@ -68,10 +69,8 @@ const QRInfoModal = ({ onClose }) => {
         return;
       }
 
-      setQrData({
-        ...data,
-        expiration: expirationDate,
-      });
+      setQrData({ ...data, expiration: expirationDate });
+      setQrId(qrIdFromUrl);
 
       const fileId = extractFileId(data.targetUrl);
       if (!fileId) {
@@ -82,8 +81,8 @@ const QRInfoModal = ({ onClose }) => {
 
       const token = localStorage.getItem('access_token');
       const files = await fetchDriveFiles('', token);
-
       const file = files.find(f => f.id === fileId);
+
       if (file) {
         setFileInfo({
           name: file.name || '-',
@@ -111,7 +110,13 @@ const QRInfoModal = ({ onClose }) => {
     try {
       const result = await qrCode.scanFile(file, true);
       const idMatch = result.match(/\/qr\/([^/]+)/);
-      const id = idMatch ? idMatch[1] : result;
+      const id = idMatch ? idMatch[1] : null;
+
+      if (!id) {
+        setError('QR code format is invalid. Expected /qr/:id');
+        return;
+      }
+
       await fetchQRDetails(id);
     } catch (err) {
       console.error('QR scan failed:', err);
@@ -144,21 +149,19 @@ const QRInfoModal = ({ onClose }) => {
 
   const handleDragOver = (e) => e.preventDefault();
 
+  const formatDateDDMMYYYY = (date) => {
+    const d = new Date(date);
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+  };
+
   return (
     <div className="qr-info-modal-backdrop">
-      <div
-        className={`qr-info-modal custom-qr-modal ${fadeOut ? 'fade-out' : ''}`}
-        ref={modalRef}
-      >
+      <div className={`qr-info-modal custom-qr-modal ${fadeOut ? 'fade-out' : ''}`} ref={modalRef}>
         <button className="close-btn" onClick={handleClose}>×</button>
         <h2>Scan QR Code from Image</h2>
 
         {!qrImage && (
-          <div
-            className="qr-dropzone"
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-          >
+          <div className="qr-dropzone" onDrop={handleDrop} onDragOver={handleDragOver}>
             <p>Drag and drop a QR code image here</p>
           </div>
         )}
@@ -177,18 +180,10 @@ const QRInfoModal = ({ onClose }) => {
           <button className="upload-btn" onClick={() => fileInputRef.current.click()}>
             Upload QR Image
           </button>
-          <button
-            className="upload-btn"
-            onClick={clearState}
-            style={{ backgroundColor: '#dc3545' }}
-          >
+          <button className="upload-btn" onClick={clearState} style={{ backgroundColor: '#dc3545' }}>
             Clear
           </button>
-          <button
-            className="upload-btn"
-            onClick={handleClose}
-            style={{ backgroundColor: '#6c757d' }}
-          >
+          <button className="upload-btn" onClick={handleClose} style={{ backgroundColor: '#6c757d' }}>
             Close
           </button>
         </div>
@@ -224,19 +219,13 @@ const QRInfoModal = ({ onClose }) => {
             {qrData.expiration && (
               <p>
                 <strong>Expires:</strong>{' '}
-                {new Date(qrData.expiration).toLocaleDateString()} at{' '}
+                {formatDateDDMMYYYY(qrData.expiration)} at{' '}
                 {new Date(qrData.expiration).toLocaleTimeString()}
               </p>
             )}
 
             {qrData.password && (
-              <div style={{ 
-                marginTop: '10px', 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center', 
-                gap: '10px' 
-              }}>
+              <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
                 <strong>Password:</strong>
                 <span>{showPassword ? qrData.password : '••••••••'}</span>
                 <button
@@ -256,14 +245,28 @@ const QRInfoModal = ({ onClose }) => {
               </div>
             )}
 
-            <a
-              href={qrData.targetUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="visit-link"
-            >
-              Visit Link
-            </a>
+            {qrId && (
+              <div>
+                <h4>Links:</h4>
+                <a
+                  href={qrData.targetUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="visit-link"
+                >
+                  Drive Link
+                </a>
+
+                <a
+                  href={`/qr/${qrId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="visit-link"
+                >
+                  QR Link
+                </a>
+              </div>
+            )}
           </div>
         )}
       </div>
