@@ -60,31 +60,32 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
   }, [showQR]);
 
   const downloadQR = async () => {
-    const qrCanvas = qrRef.current.querySelector('canvas');
-    if (!qrCanvas) return;
+  const qrCanvas = qrRef.current.querySelector('canvas');
+  if (!qrCanvas) return;
 
-    const width = qrCanvas.width;
-    const height = qrCanvas.height + 24;
+  const width = qrCanvas.width;
+  const height = qrCanvas.height + 24;
 
-    const finalCanvas = document.createElement('canvas');
-    finalCanvas.width = width;
-    finalCanvas.height = height;
+  const finalCanvas = document.createElement('canvas');
+  finalCanvas.width = width;
+  finalCanvas.height = height;
 
-    const ctx = finalCanvas.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
-    ctx.drawImage(qrCanvas, 0, 0);
+  const ctx = finalCanvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+  ctx.drawImage(qrCanvas, 0, 0);
 
-    ctx.fillStyle = '#000000';
-    ctx.font = '16px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(belowQRText, width / 2, qrCanvas.height + 16);
+  ctx.fillStyle = '#000000';
+  ctx.font = '16px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText(belowQRText, width / 2, qrCanvas.height + 16);
 
-    const link = document.createElement('a');
-    link.download = `${safeName}-qr`;
-    link.href = finalCanvas.toDataURL();
-    link.click();
-  };
+  const link = document.createElement('a');
+  link.download = `${safeName}-qr.png`; // ✅ Ensures .png extension
+  link.href = finalCanvas.toDataURL('image/png'); // ✅ Explicit MIME type
+  link.click();
+};
+
 
   const handleGenerateClick = () => {
     setShowInputModal(true);
