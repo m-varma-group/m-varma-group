@@ -13,7 +13,6 @@ const QRLandingPage = () => {
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [authorized, setAuthorized] = useState(false);
-  const [noteAcknowledged, setNoteAcknowledged] = useState(false);
 
   useEffect(() => {
     const fetchQRData = async () => {
@@ -39,16 +38,18 @@ const QRLandingPage = () => {
 
       setData(qrData);
       setLoading(false);
+
+      // Auto-authorize if no password and no note
+      if (!qrData.password && !qrData.message) {
+        setAuthorized(true);
+      }
     };
 
     fetchQRData();
 
     const disableRightClick = (e) => e.preventDefault();
     const disableKeys = (e) => {
-      if (
-        (e.ctrlKey && (e.key === 's' || e.key === 'u')) ||
-        e.key === 'F12'
-      ) {
+      if ((e.ctrlKey && (e.key === 's' || e.key === 'u')) || e.key === 'F12') {
         e.preventDefault();
         e.stopPropagation();
       }
@@ -64,21 +65,14 @@ const QRLandingPage = () => {
   }, [id]);
 
   const handleContinue = () => {
-    if (data.message && !noteAcknowledged) {
-      setNoteAcknowledged(true);
-      return;
-    }
-
     if (data.password) {
-      if (passwordInput === data.password) {
-        setAuthorized(true);
-      } else {
+      if (passwordInput !== data.password) {
         setPasswordError('Incorrect password. Please try again.');
         setTimeout(() => setPasswordError(''), 5000);
+        return;
       }
-    } else {
-      setAuthorized(true);
     }
+    setAuthorized(true);
   };
 
   if (loading) return <div>Loading...</div>;
@@ -88,22 +82,19 @@ const QRLandingPage = () => {
     return (
       <div className="qr-landing-wrapper">
         <div className="qr-landing-container">
-          {/* Step 1: Show Note */}
-          {data.message && !noteAcknowledged && (
+          {/* Note section */}
+          {data.message && (
             <>
               <h2>NOTE</h2>
               <div
                 className="qr-landing-message"
                 dangerouslySetInnerHTML={{ __html: data.message }}
               />
-              <button className="qr-landing-button" onClick={handleContinue}>
-                Continue
-              </button>
             </>
           )}
 
-          {/* Step 2: Show Password (if needed) */}
-          {(noteAcknowledged || !data.message) && data.password && !authorized && (
+          {/* Password section */}
+          {data.password && (
             <div className="qr-password-section">
               <input
                 type="password"
@@ -115,21 +106,23 @@ const QRLandingPage = () => {
                 }}
                 className="qr-password-input"
               />
-              {passwordError && <p className="qr-password-error">{passwordError}</p>}
-              <button className="qr-landing-button" onClick={handleContinue}>
-                Continue
-              </button>
+              {passwordError && (
+                <p className="qr-password-error">{passwordError}</p>
+              )}
             </div>
           )}
 
-          {/* Auto-authorize when there's no password and note is acknowledged */}
-          {(noteAcknowledged && !data.password) && setAuthorized(true)}
+          {/* Only show Continue if there's a note or password */}
+          {(data.message || data.password) && (
+            <button className="qr-landing-button" onClick={handleContinue}>
+              Continue
+            </button>
+          )}
         </div>
       </div>
     );
   }
 
-  // Step 3: Show file
   return <FileEmbedding url={data.targetUrl} />;
 };
 
