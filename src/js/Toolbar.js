@@ -1,5 +1,8 @@
+// Toolbar.js
 import React, { useState } from 'react';
 import QRInfoModal from './QRInfoModal';
+import EnscapeModal from './EnscapeModal';
+import EditQRModal from './EditQRModal';
 
 const Toolbar = ({
   isMobile,
@@ -12,6 +15,8 @@ const Toolbar = ({
   handleFileUpload,
 }) => {
   const [showQRModal, setShowQRModal] = useState(false);
+  const [showEnscapeModal, setShowEnscapeModal] = useState(false);
+  const [showEditQRModal, setShowEditQRModal] = useState(false); // New state
 
   return (
     <div className="toolbar">
@@ -25,14 +30,30 @@ const Toolbar = ({
         <span className="label">Upload File</span>
       </button>
 
+      <button onClick={() => setShowEnscapeModal(true)} title="Enscape 360 Manager">
+        <span className="icon" role="img" aria-label="Enscape 360 Manager">
+          <img
+            src="Enscape-logo.png"
+            alt="Enscape Logo"
+            style={{ display: 'inline-block', verticalAlign: 'middle', height: '1.2em' }}
+          />
+        </span>
+        <span className="label">Enscape 360</span>
+      </button>
+
       <button onClick={() => setShowLinkModal(true)} title="Add Link">
         <span className="icon" role="img" aria-label="Custom QR Add Link">🔗</span>
         <span className="label">Add Link</span>
       </button>
 
-      <button onClick={() => setShowQRModal(true)} title="Check QR">
+      <button onClick={() => setShowQRModal(true)} title="Check QR Info">
         <span className="icon" role="img" aria-label="Check QR">⛶</span>
         <span className="label">Check QR Info</span>
+      </button>
+
+      <button onClick={() => setShowEditQRModal(true)} title="Edit QR">
+        <span className="icon" role="img" aria-label="Edit QR">✎</span>
+        <span className="label">Update QR</span>
       </button>
 
       {isMobile && (
@@ -51,6 +72,8 @@ const Toolbar = ({
       />
 
       {showQRModal && <QRInfoModal onClose={() => setShowQRModal(false)} />}
+      {showEnscapeModal && <EnscapeModal onClose={() => setShowEnscapeModal(false)} />}
+      {showEditQRModal && <EditQRModal onClose={() => setShowEditQRModal(false)} />} {/* New modal */}
     </div>
   );
 };

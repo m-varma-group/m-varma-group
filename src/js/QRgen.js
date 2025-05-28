@@ -76,13 +76,13 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
   ctx.drawImage(qrCanvas, 0, 0);
 
   ctx.fillStyle = '#000000';
-  ctx.font = '16px Arial';
+  ctx.font = '12px Arial';
   ctx.textAlign = 'center';
   ctx.fillText(belowQRText, width / 2, qrCanvas.height + 16);
 
   const link = document.createElement('a');
-  link.download = `${safeName}-qr.png`; // ✅ Ensures .png extension
-  link.href = finalCanvas.toDataURL('image/png'); // ✅ Explicit MIME type
+  link.download = `${safeName}-qr.png`;
+  link.href = finalCanvas.toDataURL('image/png');
   link.click();
 };
 
@@ -227,13 +227,13 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
                 <textarea
                   value={belowQRText}
                   onChange={(e) => {
-                    if (e.target.value.length <= 18) {
+                    if (e.target.value.length <= 24) {
                       setBelowQRText(e.target.value);
                     }
                   }}
                   placeholder=""
                   className="qr-input-label"
-                  maxLength={18}
+                  maxLength={24}
                 />
               </>
             )}

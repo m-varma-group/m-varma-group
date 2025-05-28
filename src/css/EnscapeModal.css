@@ -1,0 +1,85 @@
+@keyframes fadeIn {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out forwards;
+}
+
+.fade-out {
+  animation: fadeOut 0.2s ease-in-out forwards;
+}
+
+.enscape-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  backdrop-filter: blur(3px);
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.enscape-modal {
+  background: #fff;
+  width: 75vw;
+  height: 80vh;
+  padding: 1.5rem;
+  position: relative;
+  border-radius: 16px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.enscape-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.enscape-modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.enscape-close-button {
+  all: unset;
+  background: none;
+  border: 1px transparent;
+  border-radius: px;
+  color: #ffffff;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: -0.5rem;
+  margin-right: -0.5rem;
+}
+
+.enscape-modal-content {
+  flex: 1;
+  overflow-y: auto;
+}

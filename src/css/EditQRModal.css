@@ -118,16 +118,21 @@
   }
 }
 
+.qr-info-modal.fade-out {
+  animation: fadeOut 0.2s ease-in-out forwards;
+}
+
 @keyframes fadeOut {
   from {
-    transform: translateY(0);
     opacity: 1;
+    transform: translateY(0);
   }
   to {
-    transform: translateY(-10px);
     opacity: 0;
+    transform: translateY(-10px);
   }
 }
+
 
 
 
