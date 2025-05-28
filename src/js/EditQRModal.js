@@ -117,6 +117,17 @@ const EditQRModal = ({ onClose }) => {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [handleClose]);
 
+  useEffect(() => {
+    if (status || error) {
+        const timer = setTimeout(() => {
+        setStatus('');
+        setError('');
+        }, 5000);
+        return () => clearTimeout(timer);
+    }
+    }, [status, error]);
+
+
   return (
     <div className="qr-info-modal-backdrop">
       <div
