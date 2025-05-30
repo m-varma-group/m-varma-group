@@ -14,8 +14,8 @@
 
 .token-expired-modal {
   background: #fff;
-  padding: 1rem 1.5rem;
-  border-radius: 6px;
+  padding: 0rem 1rem 1rem 1rem;
+  border-radius: 10px;
   text-align: center;
   max-width: 360px;
   width: 90%;
@@ -28,8 +28,9 @@
   gap: 0.5rem;
 }
 
-.primary-button,
+.primary-button1,
 .secondary-button {
+  all: unset;
   flex: 1;
   padding: 0.5rem 0.75rem;
   font-size: 0.9rem;
@@ -40,7 +41,7 @@
   color: #fff;
 }
 
-.primary-button {
+.primary-button1 {
   background-color: #1a73e8;
 }
 

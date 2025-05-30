@@ -10,7 +10,7 @@ const TokenExpiredModal = ({ onLogin, onLogout }) => {
         <p>Your session has expired.</p> 
         <p>Please log in again to continue.</p>
         <div className="modal-actions">
-          <button className="primary-button" onClick={onLogin}>Login</button>
+          <button className="primary-button1" onClick={onLogin}>Login</button>
           <button className="secondary-button" onClick={onLogout}>Logout</button>
         </div>
       </div>
