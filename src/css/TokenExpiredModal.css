@@ -5,56 +5,53 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 999;
+  z-index: 9999;
 }
 
 .token-expired-modal {
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
+  background: #fff;
+  padding: 1rem 1.5rem;
+  border-radius: 6px;
   text-align: center;
-  max-width: 400px;
+  max-width: 360px;
   width: 90%;
 }
 
 .modal-actions {
-  margin-top: 1.5rem;
+  margin-top: 1rem;
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.primary-button,
+.secondary-button {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+  color: #fff;
 }
 
 .primary-button {
   background-color: #1a73e8;
-  color: white;
-  border: none;
-  padding: 0.6rem 1rem;
-  margin: 0.5rem 0.4rem 0.5rem 0;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.95rem;
-  transition: background-color 0.2s ease-in-out;
-}
-
-.secondary-button {
-  background-color: #f44336;
-  color: white;
-  border: none;
-  padding: 0.6rem 1rem;
-  margin: 0.5rem 0.4rem 0.5rem 0;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.95rem;
-  transition: background-color 0.2s ease-in-out;
 }
 
 .primary-button:hover {
   background-color: #155ab6;
 }
 
+.secondary-button {
+  background-color: #f44336;
+}
+
 .secondary-button:hover {
- background-color: #751d16
+  background-color: #751d16;
 }
