@@ -16,7 +16,8 @@ const Toolbar = ({
 }) => {
   const [showQRModal, setShowQRModal] = useState(false);
   const [showEnscapeModal, setShowEnscapeModal] = useState(false);
-  const [showEditQRModal, setShowEditQRModal] = useState(false); // New state
+  const [showEditQRModal, setShowEditQRModal] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   return (
     <div className="toolbar">
@@ -41,20 +42,29 @@ const Toolbar = ({
         <span className="label">Enscape 360</span>
       </button>
 
-      <button onClick={() => setShowLinkModal(true)} title="Add Link">
-        <span className="icon" role="img" aria-label="Custom QR Add Link">🔗</span>
-        <span className="label">Add Link</span>
-      </button>
+      {/* Dropdown */}
+      <div className="dropdown">
+        <button onClick={() => setDropdownOpen(!dropdownOpen)} title="QR Tools">
+          <span className="icon" role="img" aria-label="QR Tools">🧰</span>
+          <span className="label">QR Tools ▸</span>
+        </button>
 
-      <button onClick={() => setShowQRModal(true)} title="Check QR Info">
-        <span className="icon" role="img" aria-label="Check QR">⛶</span>
-        <span className="label">Check QR Info</span>
-      </button>
+        {dropdownOpen && (
+          <div className="dropdown-menu">
+            <button onClick={() => { setShowLinkModal(true); setDropdownOpen(false); }}>
+              ➤ Add Link
+            </button>
+            <button onClick={() => { setShowQRModal(true); setDropdownOpen(false); }}>
+              ⛶ Check QR Info
+            </button>
+            <button onClick={() => { setShowEditQRModal(true); setDropdownOpen(false); }}>
+              ✎ Update QR
+            </button>
+          </div>
+        )}
+      </div>
 
-      <button onClick={() => setShowEditQRModal(true)} title="Edit QR">
-        <span className="icon" role="img" aria-label="Edit QR">✎</span>
-        <span className="label">Update QR</span>
-      </button>
+
 
       {isMobile && (
         <button onClick={() => fetchDriveFiles(currentFolderId)} title="Refresh">
@@ -73,7 +83,7 @@ const Toolbar = ({
 
       {showQRModal && <QRInfoModal onClose={() => setShowQRModal(false)} />}
       {showEnscapeModal && <EnscapeModal onClose={() => setShowEnscapeModal(false)} />}
-      {showEditQRModal && <EditQRModal onClose={() => setShowEditQRModal(false)} />} {/* New modal */}
+      {showEditQRModal && <EditQRModal onClose={() => setShowEditQRModal(false)} />}
     </div>
   );
 };
