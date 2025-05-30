@@ -15,6 +15,8 @@ import DriveDropZone from './DriveDropZone';
 import { useGoogleDriveLogin } from './GoogleLogin';
 import UploadProgressModal from './UploadProgressModal';
 import PermissionsModal from './PermissionsModal';
+import TokenExpiredModal from './TokenExpiredModal';
+
 
 
 // API and localStorage logic
@@ -52,6 +54,8 @@ const AppContent = () => {
   const [showPermissions, setShowPermissions] = useState(false);
   const [selectedFileId, setSelectedFileId] = useState(null);
   const [selectedFileName, setSelectedFileName] = useState('');
+  const [showTokenExpiredModal, setShowTokenExpiredModal] = useState(false);
+
 
   const fileInputRef = useRef();
 
@@ -308,17 +312,18 @@ const AppContent = () => {
     const maxSession = 55 * 60 * 1000;
 
     if (elapsed > maxSession) {
-      console.log('Access token expired. Attempting re-login...');
-      login();
+      console.log('Access token expired.');
+      setShowTokenExpiredModal(true); // Show modal instead of logging in directly
     } else {
       const timeout = setTimeout(() => {
         console.log('Auto-relogin triggered.');
-        login();
+        setShowTokenExpiredModal(true); // Show modal before re-login
       }, maxSession - elapsed);
 
       return () => clearTimeout(timeout);
     }
-  }, [stayLoggedIn, accessToken, login]);
+  }, [stayLoggedIn, accessToken]);
+
 
   // Applies search, type filters, and sorting to the displayed files.
   const sorted = applyFiltersAndSort(files, searchTerm, fileType, sortOption);
@@ -432,6 +437,20 @@ const AppContent = () => {
           onClose={() => setShowPermissions(false)}
         />
       )}
+
+      {showTokenExpiredModal && (
+        <TokenExpiredModal
+          onLogin={() => {
+            setShowTokenExpiredModal(false);
+            login(); // Re-authenticate
+          }}
+          onLogout={() => {
+            setShowTokenExpiredModal(false);
+            handleLogout(); // Log out
+          }}
+        />
+      )}
+
 
 
     </main>
