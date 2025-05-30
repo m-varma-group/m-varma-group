@@ -51,14 +51,14 @@ const Toolbar = ({
 
         {dropdownOpen && (
           <div className="dropdown-menu">
-            <button onClick={() => { setShowLinkModal(true); setDropdownOpen(false); }}>
-              ➤ Add Link
-            </button>
             <button onClick={() => { setShowQRModal(true); setDropdownOpen(false); }}>
               ⛶ Check QR Info
             </button>
             <button onClick={() => { setShowEditQRModal(true); setDropdownOpen(false); }}>
               ✎ Update QR
+            </button>
+            <button onClick={() => { setShowLinkModal(true); setDropdownOpen(false); }}>
+              ➤ Normal QR
             </button>
           </div>
         )}
