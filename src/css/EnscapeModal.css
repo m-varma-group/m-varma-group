@@ -68,25 +68,18 @@
 }
 
 .enscape-close-button {
-  background-color: #1a73e8;
-  color: white;
-  border: none;
-  padding: 0.6rem 1rem;
-  margin: 0.5rem 0.4rem 0.5rem 0;
-  border-radius: 6px;
+  all: unset;
+  background: none;
+  border: 1px transparent;
+  border-radius: px;
+  color: #ffffff;
+  font-size: 1rem;
   cursor: pointer;
-  font-size: 0.95rem;
-  transition: background-color 0.2s ease-in-out;
+  margin-top: -0.5rem;
+  margin-right: -0.5rem;
 }
-
-.enscape-close-button:hover {
-  background-color: #155ab6;
-}
-
 
 .enscape-modal-content {
   flex: 1;
   overflow-y: auto;
 }
-
-
