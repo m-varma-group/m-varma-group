@@ -35,7 +35,7 @@
 @media (max-width: 768px) {
   .iframe-blocker {
     width: 80px;
-    height: 120px;
+    height: 1px;
   }
 }
 
