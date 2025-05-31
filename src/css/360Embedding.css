@@ -25,17 +25,17 @@
   top: 0;
   right: 0;
   width: 100px;
-  height: 1px;
+  height: 150px;
   z-index: 0;
   background-color: #fff;
-  pointer-events: none;
+  pointer-events: all;
 }
 
 /* Adjust iframe blocker for tablets */
 @media (max-width: 768px) {
   .iframe-blocker {
     width: 80px;
-    height: 1px;
+    height: 150px;
   }
 }
 
@@ -43,7 +43,7 @@
 @media (max-width: 480px) {
   .iframe-blocker {
     width: 60px;
-    height: 1px;
+    height: 127px;
   }
 }
 
@@ -66,10 +66,10 @@
   top: 0;
   right: 0;
   width: 100px;
-  height: 1px;
+  height: 100px;
   z-index: 1;
   background: transparent;
-  pointer-events: all;
+  pointer-events: none;
 }
 
 /* Block bottom controls */
