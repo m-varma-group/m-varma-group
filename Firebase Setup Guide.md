@@ -69,7 +69,7 @@ const db = getFirestore(app);
 export { db };
 ```
 
-Replace the placeholder strings with your Firebase config keys from Step 1.4.
+Add the keys to env from your Firebase config keys from Step 1.4.
 
 ### 2.3 Test Firebase Setup
 
