@@ -50,13 +50,13 @@ const FileEmbedding = ({ url, source }) => {
       }
     };
 
-/*     document.addEventListener('contextmenu', disableRightClick);
+    document.addEventListener('contextmenu', disableRightClick);
     document.addEventListener('keydown', disableKeys);
 
     return () => {
       document.removeEventListener('contextmenu', disableRightClick);
       document.removeEventListener('keydown', disableKeys);
-    }; */
+    };
   }, [source]);
 
   const embedUrl = extractPreviewUrl(url);
