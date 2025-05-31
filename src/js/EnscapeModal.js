@@ -285,12 +285,20 @@ const EnscapeModal = ({ onClose }) => {
                 )}
                 {!item.isFolder && (
                   <button
-                    onClick={() => navigator.clipboard.writeText(item.url)}
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(item.url);
+                        alert('Link copied to clipboard!');
+                      } catch (err) {
+                        alert('Failed to copy link.');
+                      }
+                    }}
                     title="Copy URL"
                     className="enscape-copy-button"
                   >
                     📋
                   </button>
+
                 )}
                 <button
                   onClick={() => {
