@@ -68,7 +68,8 @@
   width: 100px;
   height: 100px;
   z-index: 5;
-  background: transparent;
+  background: #fff;
+  pointer-events: none;
 }
 
 /* Block bottom controls */
