@@ -84,7 +84,7 @@ const FileEmbedding = ({ url, source }) => {
       <iframe
         title="Embedded File Preview"
         src={embedUrl}
-        allow="autoplay"
+        allow="gyroscope; accelerometer; fullscreen; autoplay"
       />
       <div className="iframe-blocker" />
 

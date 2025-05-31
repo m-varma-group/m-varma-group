@@ -25,9 +25,9 @@
   top: 0;
   right: 0;
   width: 100px;
-  height: 150px;
-  z-index: 1000;
-  background-color: transparent;
+  height: 1px;
+  z-index: 0;
+  background-color: #fff;
   pointer-events: none;
 }
 
@@ -43,7 +43,7 @@
 @media (max-width: 480px) {
   .iframe-blocker {
     width: 60px;
-    height: 100px;
+    height: 1px;
   }
 }
 
@@ -66,10 +66,10 @@
   top: 0;
   right: 0;
   width: 100px;
-  height: 100px;
-  z-index: 5;
-  background: #fff;
-  pointer-events: none;
+  height: 1px;
+  z-index: 1;
+  background: transparent;
+  pointer-events: all;
 }
 
 /* Block bottom controls */
@@ -112,7 +112,7 @@
 
   .top-right-blocker {
     width: 80px;
-    height: 80px;
+    height: 1px;
   }
 
   .bottom-blocker {
@@ -134,7 +134,7 @@
 
   .top-right-blocker {
     width: 60px;
-    height: 60px;
+    height: 1px;
   }
 
   .bottom-blocker {
