@@ -108,7 +108,7 @@ const DriveDropZone = ({
                             }}
                             title="Copy shareable link"
                           >
-                            <span role="img" aria-label="Add Link">🔗</span>
+                            <span role="img" aria-label="Add Link">📋</span>
                           </button>
                           <button
                             onClick={(e) => {

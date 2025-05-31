@@ -58,7 +58,7 @@ const Toolbar = ({
               ✎ Update QR
             </button>
             <button onClick={() => { setShowLinkModal(true); setDropdownOpen(false); }}>
-              ➤ Normal QR
+              ➤ Default QR
             </button>
           </div>
         )}

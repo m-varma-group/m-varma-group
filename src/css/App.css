@@ -235,11 +235,11 @@ input[type="text"] {
   position: absolute;
   top: 0;
   left: 100%;
-  background-color: white;
+  background-color: #f9fafb;
   border: 1px solid #ccc;
   border-radius: 6px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  z-index: 10000;
+  z-index: 9998;
   min-width: 160px;
   display: flex;
   flex-direction: column;
@@ -266,10 +266,10 @@ input[type="text"] {
 /* Mobile-friendly adjustment */
 @media (max-width: 600px) {
   .dropdown-menu {
-    top: 0.2rem;               /* small nudge down for alignment */
-    left: calc(100% + 0.4rem); /* move slightly further right */
-    min-width: 100px;          /* slightly smaller width */
-    transform: scale(0.75);    /* scale down a bit */
+    top: 0.2rem;               
+    left: calc(100% + 0.4rem); 
+    min-width: 100px;        
+    transform: scale(0.75);    
     transform-origin: top left;
   }
 

@@ -1,3 +1,195 @@
+.enscape-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.enscape-modal-main {
+  position: relative;
+  background: #ffffff;
+  width: 95vw;
+  max-width: 1440px;
+  height: 90vh;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.2s ease-in-out;
+  overflow: hidden;
+}
+
+.enscape-modal-main.fade-out {
+  animation: fadeOut 0.2s ease-in-out forwards;
+}
+
+/* Header */
+.enscape-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.enscape-modal-header h2 {
+  font-size: 1.75rem;
+  margin: 0;
+  color: #1a73e8;
+}
+
+/* Close button moved to absolute top right */
+.enscape-close-button {
+  background-color: unset;
+  position: absolute;
+  top: 4px;
+  right: 7px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s;
+}
+.enscape-close-button:hover {
+  background-color: #155ab6;
+}
+
+/* Inputs */
+.enscape-modal-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.enscape-input-file-name,
+.enscape-input-url {
+  margin-top: 4px;
+  flex: 1;
+  min-width: 200px;
+  max-height: 45px;
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.enscape-add-button,
+.enscape-folder-button {
+  background-color: #1a73e8;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s;
+}
+.enscape-add-button:hover,
+.enscape-folder-button:hover {
+  background-color: #155ab6;
+}
+
+.enscape-back-button {
+  background: transparent;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 0.95rem;
+  margin-right: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+.enscape-back-button:hover {
+  background-color: #e8f0fe;
+}
+
+.enscape-path {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.enscape-path-link {
+  cursor: pointer;
+  color: #1a73e8;
+}
+
+/* File list container */
+.enscape-modal-file-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #fafafa;
+  margin-top: 12px;
+}
+
+/* File item */
+.enscape-file-item {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.enscape-file-item:hover {
+  background-color: #f8f9fa;
+}
+
+.enscape-file-info a {
+  color: #333;
+  font-weight: 500;
+  font-size: 1rem;
+  text-decoration: none;
+  max-width: 640px;
+  word-break: break-word;
+}
+
+/* Buttons per file */
+.enscape-file-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.enscape-copy-button,
+.enscape-settings-button,
+.enscape-delete-button {
+  background-color: #1a73e8;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background-color 0.2s;
+}
+.enscape-copy-button:hover,
+.enscape-settings-button:hover,
+.enscape-delete-button:hover {
+  background-color: #155ab6;
+}
+
+/* Fade Animations */
 @keyframes fadeIn {
   from {
     transform: translateY(-10px);
@@ -20,66 +212,24 @@
   }
 }
 
-.fade-in {
-  animation: fadeIn 0.3s ease-in-out forwards;
-}
+/* Responsive */
+@media (max-width: 600px) {
+  .enscape-modal-main {
+    width: 98vw;
+    height: 95vh;
+    padding: 16px;
+  }
 
-.fade-out {
-  animation: fadeOut 0.2s ease-in-out forwards;
-}
+  .enscape-modal-header h2 {
+    font-size: 1.25rem;
+  }
 
-.enscape-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  backdrop-filter: blur(3px);
-  background: rgba(0, 0, 0, 0.4);
-  z-index: 9999;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+  .enscape-file-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 
-.enscape-modal {
-  background: #fff;
-  width: 75vw;
-  height: 80vh;
-  padding: 1.5rem;
-  position: relative;
-  border-radius: 16px;
-  overflow: auto;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-}
-
-.enscape-modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
-}
-
-.enscape-modal-header h2 {
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-.enscape-close-button {
-  all: unset;
-  background: none;
-  border: 1px transparent;
-  border-radius: px;
-  color: #ffffff;
-  font-size: 1rem;
-  cursor: pointer;
-  margin-top: -0.5rem;
-  margin-right: -0.5rem;
-}
-
-.enscape-modal-content {
-  flex: 1;
-  overflow-y: auto;
+  .enscape-file-actions {
+    margin-top: 8px;
+  }
 }
