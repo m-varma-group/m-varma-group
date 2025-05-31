@@ -27,7 +27,7 @@
   width: 100px;
   height: 150px;
   z-index: 0;
-  background-color: #fff;
+  background-color: transparent;
   pointer-events: all;
 }
 
@@ -68,7 +68,7 @@
   width: 100px;
   height: 100px;
   z-index: 5;
-  background: #000;
+  background: transparent;
   pointer-events: none;
 }
 
