@@ -1,5 +1,17 @@
 import React, { useEffect } from 'react';
-import '../css/FileEmbedding.css';
+
+// Dynamically import the correct CSS file based on source
+const loadStylesheet = (source) => {
+  switch (source) {
+    case 'qr360':
+      require('../css/360Embedding.css');
+      break;
+    case 'qrCodes':
+    default:
+      require('../css/DriveEmbedding.css');
+      break;
+  }
+};
 
 const extractPreviewUrl = (url) => {
   const fileMatch = url.match(/\/file\/d\/([^/]+)/);
@@ -23,12 +35,14 @@ const extractPreviewUrl = (url) => {
   return url;
 };
 
-const FileEmbedding = ({ url }) => {
+const FileEmbedding = ({ url, source }) => {
   useEffect(() => {
+    loadStylesheet(source);
+
     const disableRightClick = (e) => e.preventDefault();
     const disableKeys = (e) => {
       if (
-        (e.ctrlKey && (e.key === 's' || e.key === 'u')) || 
+        (e.ctrlKey && (e.key === 's' || e.key === 'u')) ||
         e.key === 'F12'
       ) {
         e.preventDefault();
@@ -43,14 +57,24 @@ const FileEmbedding = ({ url }) => {
       document.removeEventListener('contextmenu', disableRightClick);
       document.removeEventListener('keydown', disableKeys);
     };
-  }, []);
+  }, [source]);
 
   const embedUrl = extractPreviewUrl(url);
 
   if (!embedUrl) {
     return (
       <div style={{ textAlign: 'center', marginTop: '2em', color: '#fff' }}>
-        <p>🔗 <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: '#4fc3f7' }}>View folder</a></p>
+        <p>
+          🔗{' '}
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#4fc3f7' }}
+          >
+            View folder
+          </a>
+        </p>
       </div>
     );
   }
@@ -58,11 +82,25 @@ const FileEmbedding = ({ url }) => {
   return (
     <div className="file-embed-container">
       <iframe
-        title="Embedded Google Drive File"
+        title="Embedded File Preview"
         src={embedUrl}
         allow="autoplay"
       />
       <div className="iframe-blocker" />
+
+      {source === 'qr360' && (
+        <>
+          <img
+            src="/overlay_logo.png"
+            alt="Centered Logo"
+            className="center-image"
+          />
+          <div className="top-right-blocker" />
+          <div className="bottom-blocker" />
+          <div className="side-blocker left-blocker" />
+          <div className="side-blocker right-blocker" />
+        </>
+      )}
     </div>
   );
 };

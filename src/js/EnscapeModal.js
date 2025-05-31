@@ -11,7 +11,7 @@ import {
   where,
   getDocs,
 } from 'firebase/firestore';
-import QRgen from './QRgen';
+import QR360Gen from './QR360Gen';
 import '../css/EnscapeModal.css';
 
 const EnscapeModal = ({ onClose }) => {
@@ -277,11 +277,7 @@ const EnscapeModal = ({ onClose }) => {
               </div>
               <div className="enscape-file-actions">
                 {!item.isFolder && (
-                  <QRgen
-                    fileId={item.id}
-                    fileName={item.fileName}
-                    isFolder={item.isFolder}
-                  />
+                <QR360Gen url={item.url} fileName={item.fileName} />
                 )}
                 {!item.isFolder && (
                   <button

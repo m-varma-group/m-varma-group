@@ -49,61 +49,72 @@ const QRInfoModal = ({ onClose }) => {
     return fileMatch?.[1] || folderMatch?.[1] || null;
   };
 
-  const fetchQRDetails = async (qrIdFromUrl) => {
-    setLoading(true);
-    try {
-      const snap = await getDoc(doc(db, 'qrCodes', qrIdFromUrl));
-      if (!snap.exists()) {
-        setError('QR code not found or expired.');
-        setLoading(false);
-        return;
-      }
-
-      const data = snap.data();
-      const expirationDate =
-        data.expiration?.toDate?.() || data.expiration || null;
-
-      if (expirationDate && new Date() > expirationDate) {
-        setError('QR code is expired.');
-        setLoading(false);
-        return;
-      }
-
-      setQrData({ ...data, expiration: expirationDate });
-      setQrId(qrIdFromUrl);
-
-      const fileId = extractFileId(data.targetUrl);
-      if (!fileId) {
-        setFileInfo({ name: '-', type: '-', owner: '-', modifiedTime: '-' });
-        setLoading(false);
-        return;
-      }
-
-      const token = localStorage.getItem('access_token');
-      const files = await fetchDriveFiles('', token);
-      const file = files.find(f => f.id === fileId);
-
-      if (file) {
-        setFileInfo({
-          name: file.name || '-',
-          type: file.mimeType.includes('folder') ? 'Folder' :
-                file.mimeType.includes('pdf') ? 'PDF' :
-                file.mimeType.includes('image') ? 'Image' :
-                'File',
-          owner: file.owners?.[0]?.displayName || 'Unknown',
-          modifiedTime: file.modifiedTime
-            ? new Date(file.modifiedTime).toLocaleString()
-            : 'N/A',
-        });
-      } else {
-        setFileInfo({ name: '(Not found)', type: '-', owner: '-', modifiedTime: '-' });
-      }
-    } catch (err) {
-      console.error(err);
-      setError('Failed to load QR details.');
-    }
-    setLoading(false);
+const fetchQRDetails = async (qrIdFromUrl) => {
+  setLoading(true);
+  const fetchFromCollection = async (collection) => {
+    const snap = await getDoc(doc(db, collection, qrIdFromUrl));
+    return snap.exists() ? snap : null;
   };
+
+  try {
+    let snap = await fetchFromCollection('qrCodes');
+    if (!snap) {
+      snap = await fetchFromCollection('qr360');
+    }
+
+    if (!snap) {
+      setError('QR code not found or expired.');
+      setLoading(false);
+      return;
+    }
+
+    const data = snap.data();
+    const expirationDate =
+      data.expiration?.toDate?.() || data.expiration || null;
+
+    if (expirationDate && new Date() > expirationDate) {
+      setError('QR code is expired.');
+      setLoading(false);
+      return;
+    }
+
+    setQrData({ ...data, expiration: expirationDate });
+    setQrId(qrIdFromUrl);
+
+    const fileId = extractFileId(data.targetUrl);
+    if (!fileId) {
+      setFileInfo({ name: '-', type: '-', owner: '-', modifiedTime: '-' });
+      setLoading(false);
+      return;
+    }
+
+    const token = localStorage.getItem('access_token');
+    const files = await fetchDriveFiles('', token);
+    const file = files.find(f => f.id === fileId);
+
+    if (file) {
+      setFileInfo({
+        name: file.name || '-',
+        type: file.mimeType.includes('folder') ? 'Folder' :
+              file.mimeType.includes('pdf') ? 'PDF' :
+              file.mimeType.includes('image') ? 'Image' :
+              'File',
+        owner: file.owners?.[0]?.displayName || 'Unknown',
+        modifiedTime: file.modifiedTime
+          ? new Date(file.modifiedTime).toLocaleString()
+          : 'N/A',
+      });
+    } else {
+      setFileInfo({ name: '(Not found)', type: '-', owner: '-', modifiedTime: '-' });
+    }
+  } catch (err) {
+    console.error(err);
+    setError('Failed to load QR details.');
+  }
+
+  setLoading(false);
+};
+
 
   const scanImage = async (file) => {
     const qrCode = new Html5Qrcode('qr-temp-canvas');
@@ -254,7 +265,7 @@ const QRInfoModal = ({ onClose }) => {
                   rel="noopener noreferrer"
                   className="visit-link"
                 >
-                  Drive Link
+                  Default Link
                 </a>
 
                 <a

@@ -1,0 +1,147 @@
+/* Base styles */
+.file-embed-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 999;
+  background-color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-embed-container iframe {
+  width: 100%;
+  height: 85%;
+  border: none;
+  background-color: #fff;
+}
+
+/* Default blocker for desktop */
+.iframe-blocker {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 150px;
+  z-index: 1000;
+  background-color: transparent;
+  pointer-events: none;
+}
+
+/* Adjust iframe blocker for tablets */
+@media (max-width: 768px) {
+  .iframe-blocker {
+    width: 80px;
+    height: 120px;
+  }
+}
+
+/* Adjust iframe blocker for small phones */
+@media (max-width: 480px) {
+  .iframe-blocker {
+    width: 60px;
+    height: 100px;
+  }
+}
+
+/* Overlay logo centered */
+.center-image {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  width: 40vw;
+  max-width: 225px;
+  height: auto;
+  pointer-events: none;
+}
+
+/* Block top-right UI (pop-out icon etc.) */
+.top-right-blocker {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 100px;
+  z-index: 5;
+  background: transparent;
+}
+
+/* Block bottom controls */
+.bottom-blocker {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  z-index: 5;
+  background: transparent;
+}
+
+/* Side blockers (left + right) */
+.side-blocker {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 60px;
+  height: 80px;
+  z-index: 5;
+  background: transparent;
+}
+
+/* Position left and right */
+.left-blocker {
+  left: 0;
+}
+
+.right-blocker {
+  right: 0;
+}
+
+/* Tablet adjustments */
+@media (max-width: 768px) {
+  .center-image {
+    width: 50vw;
+    max-width: 180px;
+  }
+
+  .top-right-blocker {
+    width: 80px;
+    height: 80px;
+  }
+
+  .bottom-blocker {
+    height: 100px;
+  }
+
+  .side-blocker {
+    width: 50px;
+    height: 70px;
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  .center-image {
+    width: 60vw;
+    max-width: 150px;
+  }
+
+  .top-right-blocker {
+    width: 60px;
+    height: 60px;
+  }
+
+  .bottom-blocker {
+    height: 145px;
+  }
+
+  .side-blocker {
+    width: 40px;
+    height: 60px;
+  }
+}

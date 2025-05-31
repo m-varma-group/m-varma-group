@@ -19,6 +19,7 @@ const EditQRModal = ({ onClose }) => {
     expiration: null
   });
   const [closing, setClosing] = useState(false);
+  const [collection, setCollection] = useState('qrCodes');
 
   const fileInputRef = useRef();
   const modalRef = useRef();
@@ -39,30 +40,44 @@ const EditQRModal = ({ onClose }) => {
     setError('');
   };
 
-  const scanImage = async (file) => {
-    const qrCode = new Html5Qrcode('edit-qr-canvas');
-    try {
-      const result = await qrCode.scanFile(file, true);
-      const idMatch = result.match(/\/qr\/([^/]+)/);
-      const id = idMatch ? idMatch[1] : null;
-      if (!id) throw new Error('Invalid QR code');
-      setQrId(id);
-      const qrDoc = await getDoc(doc(db, 'qrCodes', id));
-      if (qrDoc.exists()) {
-        const data = qrDoc.data();
-        setQrData({
-          message: data.message || '',
-          password: data.password || '',
-          expiration: data.expiration ? new Date(data.expiration.seconds * 1000) : null
-        });
-      } else {
-        setError('QR ID not found in Firestore.');
-      }
-    } catch (err) {
-      console.error(err);
-      setError('QR scan failed. Make sure it contains /qr/:id');
+const scanImage = async (file) => {
+  const qrCode = new Html5Qrcode('edit-qr-canvas');
+  try {
+    const result = await qrCode.scanFile(file, true);
+    const idMatch = result.match(/\/qr\/([^/]+)/);
+    const id = idMatch ? idMatch[1] : null;
+    if (!id) throw new Error('Invalid QR code');
+
+    setQrId(id);
+
+    const tryGetDoc = async (col) => {
+      const snap = await getDoc(doc(db, col, id));
+      return snap.exists() ? { data: snap.data(), col } : null;
+    };
+
+    let found = await tryGetDoc('qrCodes');
+    if (!found) found = await tryGetDoc('qr360');
+
+    if (!found) {
+      setError('QR ID not found in Firestore.');
+      return;
     }
-  };
+
+    setCollection(found.col);
+
+    const data = found.data;
+    setQrData({
+      message: data.message || '',
+      password: data.password || '',
+      expiration: data.expiration?.seconds
+        ? new Date(data.expiration.seconds * 1000)
+        : data.expiration || null
+    });
+  } catch (err) {
+    console.error(err);
+    setError('QR scan failed. Make sure it contains /qr/:id');
+  }
+};
 
   const handleDrop = async (e) => {
     e.preventDefault();
@@ -87,25 +102,27 @@ const EditQRModal = ({ onClose }) => {
     await scanImage(file);
   };
 
-  const handleUpdate = async () => {
-    if (!qrId) {
-      setError('No valid QR ID detected.');
-      return;
-    }
-    try {
-      const updatedMessage = editorRef.current?.getContent() || '';
-      await updateDoc(doc(db, 'qrCodes', qrId), {
-        message: updatedMessage,
-        password: qrData.password,
-        expiration: qrData.expiration,
-        updatedAt: new Date()
-      });
-      setStatus('QR updated successfully.');
-    } catch (err) {
-      console.error(err);
-      setError('Failed to update QR in Firestore.');
-    }
-  };
+const handleUpdate = async () => {
+  if (!qrId || !collection) {
+    setError('No valid QR ID or collection detected.');
+    return;
+  }
+
+  try {
+    const updatedMessage = editorRef.current?.getContent() || '';
+    await updateDoc(doc(db, collection, qrId), {
+      message: updatedMessage,
+      password: qrData.password,
+      expiration: qrData.expiration,
+      updatedAt: new Date()
+    });
+    setStatus('QR updated successfully.');
+  } catch (err) {
+    console.error(err);
+    setError('Failed to update QR in Firestore.');
+  }
+};
+
 
   useEffect(() => {
     const handleOutsideClick = (e) => {

@@ -13,13 +13,23 @@ const QRLandingPage = () => {
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [authorized, setAuthorized] = useState(false);
+  const [sourceCollection, setSourceCollection] = useState(null); // NEW
 
   useEffect(() => {
     const fetchQRData = async () => {
-      const docRef = doc(db, 'qrCodes', id);
-      const docSnap = await getDoc(docRef);
+      const tryFetch = async (collection) => {
+        const snap = await getDoc(doc(db, collection, id));
+        if (snap.exists()) {
+          setSourceCollection(collection); // Set source
+          return snap;
+        }
+        return null;
+      };
 
-      if (!docSnap.exists()) {
+      let docSnap = await tryFetch('qrCodes');
+      if (!docSnap) docSnap = await tryFetch('qr360');
+
+      if (!docSnap) {
         setExpired(true);
         setLoading(false);
         return;
@@ -28,8 +38,11 @@ const QRLandingPage = () => {
       const qrData = docSnap.data();
 
       if (qrData.expiration) {
-        const expirationTime = qrData.expiration.toDate();
-        if (new Date() > expirationTime) {
+        const expirationDate =
+          qrData.expiration.toDate?.() ||
+          new Date(qrData.expiration.seconds * 1000);
+
+        if (new Date() > expirationDate) {
           setExpired(true);
           setLoading(false);
           return;
@@ -39,7 +52,6 @@ const QRLandingPage = () => {
       setData(qrData);
       setLoading(false);
 
-      // Auto-authorize if no password and no note
       if (!qrData.password && !qrData.message) {
         setAuthorized(true);
       }
@@ -123,7 +135,7 @@ const QRLandingPage = () => {
     );
   }
 
-  return <FileEmbedding url={data.targetUrl} />;
+  return <FileEmbedding url={data.targetUrl} source={sourceCollection} />;
 };
 
 export default QRLandingPage;
