@@ -226,7 +226,7 @@ const EnscapeModal = ({ onClose }) => {
             className="enscape-input-url"
           />
           <button onClick={handleAdd} className="enscape-add-button expanded">
-            Add
+            Add Link
           </button>
           <button onClick={handleCreateFolder} className="enscape-add-button expanded">
             New Folder
