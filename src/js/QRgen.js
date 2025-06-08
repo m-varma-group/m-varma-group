@@ -23,9 +23,11 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
   const [enablePassword, setEnablePassword] = useState(false);
   const [enableLabel, setEnableLabel] = useState(false);
 
+  // New: Controlled note content state
+  const [noteContent, setNoteContent] = useState('');
+
   const qrRef = useRef(null);
   const qrInstance = useRef(null);
-  const editorRef = useRef(null);
 
   const baseUrl = isFolder
     ? `https://drive.google.com/drive/folders/${fileId}`
@@ -33,6 +35,9 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
 
   const safeName = fileName.replace(/[^\w\d_.-]/g, '_');
 
+  const STORAGE_KEY = `qrgen-${fileId}`;
+
+  // Initialize QRCodeStyling instance once
   useEffect(() => {
     if (!qrInstance.current) {
       qrInstance.current = new QRCodeStyling({
@@ -52,6 +57,7 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
     }
   }, []);
 
+  // Append QR code to container when showQR changes
   useEffect(() => {
     if (qrRef.current && qrInstance.current && showQR) {
       qrRef.current.innerHTML = '';
@@ -59,39 +65,96 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
     }
   }, [showQR]);
 
-  const downloadQR = async () => {
-  const qrCanvas = qrRef.current.querySelector('canvas');
-  if (!qrCanvas) return;
-
-  const width = qrCanvas.width;
-  const height = qrCanvas.height + 24;
-
-  const finalCanvas = document.createElement('canvas');
-  finalCanvas.width = width;
-  finalCanvas.height = height;
-
-  const ctx = finalCanvas.getContext('2d');
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
-  ctx.drawImage(qrCanvas, 0, 0);
-
-  ctx.fillStyle = '#000000';
-  ctx.font = '12px Arial';
-  ctx.textAlign = 'center';
-  ctx.fillText(belowQRText, width / 2, qrCanvas.height + 16);
-
-  const link = document.createElement('a');
-  link.download = `${safeName}-qr.png`;
-  link.href = finalCanvas.toDataURL('image/png');
-  link.click();
-};
-
-
+  // Open input modal and load saved data if any
   const handleGenerateClick = () => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const {
+        note,
+        expiration,
+        password,
+        label,
+        enableNote,
+        enableExpiry,
+        enablePassword,
+        enableLabel,
+      } = JSON.parse(saved);
+
+      setBelowQRText(label || '');
+      setPassword(password || '');
+      setExpiration(expiration ? new Date(expiration) : null);
+
+      setEnableNote(enableNote || false);
+      setEnableExpiry(enableExpiry || false);
+      setEnablePassword(enablePassword || false);
+      setEnableLabel(enableLabel || false);
+
+      setNoteContent(note || '');
+    } else {
+      // Reset if no saved data
+      setNoteContent('');
+      setExpiration(null);
+      setPassword('');
+      setBelowQRText('');
+      setEnableNote(false);
+      setEnableExpiry(false);
+      setEnablePassword(false);
+      setEnableLabel(false);
+    }
     setShowInputModal(true);
     setFadeOutInputModal(false);
   };
 
+  // Save current form data to localStorage
+  const saveTempData = () => {
+    const data = {
+      note: enableNote ? noteContent : '',
+      expiration: enableExpiry ? expiration : null,
+      password,
+      label: belowQRText,
+      enableNote,
+      enableExpiry,
+      enablePassword,
+      enableLabel,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  };
+
+  // Clear localStorage temp data and reset note content state
+  const clearTempData = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setNoteContent('');
+  };
+
+  // Download QR code image with label below
+  const downloadQR = async () => {
+    const qrCanvas = qrRef.current.querySelector('canvas');
+    if (!qrCanvas) return;
+
+    const width = qrCanvas.width;
+    const height = qrCanvas.height + 24;
+
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = width;
+    finalCanvas.height = height;
+
+    const ctx = finalCanvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+    ctx.drawImage(qrCanvas, 0, 0);
+
+    ctx.fillStyle = '#000000';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(belowQRText, width / 2, qrCanvas.height + 16);
+
+    const link = document.createElement('a');
+    link.download = `${safeName}-qr.png`;
+    link.href = finalCanvas.toDataURL('image/png');
+    link.click();
+  };
+
+  // On confirm, validate inputs, save metadata to Firestore, and generate QR code data URL
   const handleConfirmInputs = async () => {
     if (enableExpiry && !expiration) {
       alert('Please enter an expiration date and time.');
@@ -99,7 +162,6 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
     }
 
     const shortId = nanoid(8);
-    const content = enableNote ? editorRef.current.getContent() : '';
 
     const qrMetadata = {
       targetUrl: baseUrl,
@@ -109,7 +171,7 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
       createdAt: serverTimestamp(),
     };
 
-    if (enableNote) qrMetadata.message = content;
+    if (enableNote) qrMetadata.message = noteContent;
     if (enableExpiry) qrMetadata.expiration = new Date(expiration);
     if (enablePassword) qrMetadata.password = password;
     if (enableLabel) qrMetadata.label = belowQRText;
@@ -117,6 +179,8 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
     try {
       await setDoc(doc(db, 'qrCodes', shortId), qrMetadata);
       console.log('QR metadata saved with ID:', shortId);
+
+      clearTempData();
 
       const landingPageUrl = `${window.location.origin}/qr/${shortId}`;
       qrInstance.current.update({ data: landingPageUrl });
@@ -133,16 +197,20 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
     }
   };
 
+  // Close input modal and save temporary data
   const handleCloseInputModal = () => {
+    saveTempData();
     setFadeOutInputModal(true);
     setTimeout(() => setShowInputModal(false), 200);
   };
 
+  // Close QR modal
   const handleCloseQRModal = () => {
     setFadeOutQRModal(true);
     setTimeout(() => setShowQR(false), 200);
   };
 
+  // Close modals on overlay click
   const handleOverlayClick = (e, type) => {
     if (e.target.classList.contains('qr-modal-overlay')) {
       type === 'input' ? handleCloseInputModal() : handleCloseQRModal();
@@ -157,18 +225,42 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
 
       {/* Input Modal */}
       {showInputModal && (
-        <div
-          className="qr-modal-overlay"
-          onClick={(e) => handleOverlayClick(e, 'input')}
-        >
-          <div className={`qr-modal ${fadeOutInputModal ? 'fade-out' : ''}`} onClick={(e) => e.stopPropagation()}>
+        <div className="qr-modal-overlay" onClick={(e) => handleOverlayClick(e, 'input')}>
+          <div
+            className={`qr-modal ${fadeOutInputModal ? 'fade-out' : ''}`}
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3>QR Options for "{truncateFileName(fileName)}"</h3>
 
             <div className="qr-options-row">
-              <label><input type="checkbox" checked={enableNote} onChange={() => setEnableNote(!enableNote)} /> Add Note</label>
-              <label><input type="checkbox" checked={enableExpiry} onChange={() => setEnableExpiry(!enableExpiry)} /> Set Expiry</label>
-              <label><input type="checkbox" checked={enablePassword} onChange={() => setEnablePassword(!enablePassword)} /> Set Password</label>
-              <label><input type="checkbox" checked={enableLabel} onChange={() => setEnableLabel(!enableLabel)} /> Set QR Label</label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={enableNote}
+                  onChange={() => setEnableNote(!enableNote)}
+                /> Add Note
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={enableExpiry}
+                  onChange={() => setEnableExpiry(!enableExpiry)}
+                /> Set Expiry
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={enablePassword}
+                  onChange={() => setEnablePassword(!enablePassword)}
+                /> Set Password
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={enableLabel}
+                  onChange={() => setEnableLabel(!enableLabel)}
+                /> Set QR Label
+              </label>
             </div>
 
             {enableNote && (
@@ -176,15 +268,16 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
                 <p>Add a Note</p>
                 <Editor
                   tinymceScriptSrc={`${process.env.PUBLIC_URL}/tinymce/tinymce.min.js`}
-                  onInit={(evt, editor) => editorRef.current = editor}
+                  value={noteContent}
+                  onEditorChange={(content) => setNoteContent(content)}
                   init={{
                     height: 400,
                     width: 600,
                     menubar: false,
                     plugins: 'link lists fullscreen',
                     toolbar:
-                      'undo redo | formatselect | bold italic underline HR | alignleft aligncenter alignright | bullist | fullscreen',
-                    branding: false
+                      'undo redo | formatselect | bold italic underline | alignleft aligncenter alignright | bullist | fullscreen',
+                    branding: false,
                   }}
                 />
               </>
@@ -248,17 +341,18 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
 
       {/* QR Preview Modal */}
       {showQR && (
-        <div
-          className="qr-modal-overlay"
-          onClick={(e) => handleOverlayClick(e, 'qr')}
-        >
-          <div className={`qr-modal ${fadeOutQRModal ? 'fade-out' : ''}`} onClick={(e) => e.stopPropagation()}>
+        <div className="qr-modal-overlay" onClick={(e) => handleOverlayClick(e, 'qr')}>
+          <div
+            className={`qr-modal ${fadeOutQRModal ? 'fade-out' : ''}`}
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3>QR for "{truncateFileName(fileName)}"</h3>
-
             <div className="qr-preview" ref={qrRef}></div>
 
             {belowQRText && (
-              <p style={{ textAlign: 'center', marginTop: '2px', fontWeight: 'normal' }}>
+              <p
+                style={{ textAlign: 'center', marginTop: '2px', fontWeight: 'normal' }}
+              >
                 {belowQRText}
               </p>
             )}
