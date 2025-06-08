@@ -22,12 +22,16 @@ const QR360Gen = ({ url, fileName }) => {
   const [enablePassword, setEnablePassword] = useState(false);
   const [enableLabel, setEnableLabel] = useState(false);
 
+  // NEW: note content as controlled state
+  const [noteContent, setNoteContent] = useState('');
+
   const qrRef = useRef(null);
   const qrInstance = useRef(null);
-  const editorRef = useRef(null);
 
+  const localKey = `qr360-${fileName}`;
   const safeName = fileName.replace(/[^\w\d_.-]/g, '_');
 
+  // Initialize QR instance once
   useEffect(() => {
     if (!qrInstance.current) {
       qrInstance.current = new QRCodeStyling({
@@ -47,6 +51,7 @@ const QR360Gen = ({ url, fileName }) => {
     }
   }, []);
 
+  // Append QR to DOM on showQR change
   useEffect(() => {
     if (qrRef.current && qrInstance.current && showQR) {
       qrRef.current.innerHTML = '';
@@ -54,7 +59,73 @@ const QR360Gen = ({ url, fileName }) => {
     }
   }, [showQR]);
 
-  const downloadQR = async () => {
+  // Load saved data from localStorage on input modal open
+  useEffect(() => {
+    if (showInputModal) {
+      const saved = localStorage.getItem(localKey);
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          setEnableNote(data.enableNote || false);
+          setEnableExpiry(data.enableExpiry || false);
+          setEnablePassword(data.enablePassword || false);
+          setEnableLabel(data.enableLabel || false);
+          setPassword(data.password || '');
+          setBelowQRText(data.belowQRText || '');
+          setExpiration(data.expiration ? new Date(data.expiration) : null);
+          setNoteContent(data.note || '');
+        } catch (err) {
+          console.error('Error parsing saved QR data:', err);
+          setNoteContent('');
+        }
+      } else {
+        // Reset all states if no saved data
+        setEnableNote(false);
+        setEnableExpiry(false);
+        setEnablePassword(false);
+        setEnableLabel(false);
+        setPassword('');
+        setBelowQRText('');
+        setExpiration(null);
+        setNoteContent('');
+      }
+    }
+  }, [showInputModal, localKey]);
+
+  // Save form data to localStorage whenever relevant data changes (only when modal open)
+  useEffect(() => {
+    if (!showInputModal) return;
+
+    const data = {
+      enableNote,
+      enableExpiry,
+      enablePassword,
+      enableLabel,
+      password,
+      belowQRText,
+      expiration: expiration ? expiration.toISOString() : null,
+      note: noteContent,
+    };
+    localStorage.setItem(localKey, JSON.stringify(data));
+  }, [
+    enableNote,
+    enableExpiry,
+    enablePassword,
+    enableLabel,
+    password,
+    belowQRText,
+    expiration,
+    noteContent,
+    showInputModal,
+    localKey,
+  ]);
+
+  const clearLocalData = () => {
+    localStorage.removeItem(localKey);
+    setNoteContent('');
+  };
+
+  const downloadQR = () => {
     const qrCanvas = qrRef.current.querySelector('canvas');
     if (!qrCanvas) return;
 
@@ -70,10 +141,12 @@ const QR360Gen = ({ url, fileName }) => {
     ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
     ctx.drawImage(qrCanvas, 0, 0);
 
-    ctx.fillStyle = '#000000';
-    ctx.font = '12px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(belowQRText, width / 2, qrCanvas.height + 16);
+    if (belowQRText) {
+      ctx.fillStyle = '#000000';
+      ctx.font = '12px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(belowQRText, width / 2, qrCanvas.height + 16);
+    }
 
     const link = document.createElement('a');
     link.download = `${safeName}-qr360.png`;
@@ -93,7 +166,7 @@ const QR360Gen = ({ url, fileName }) => {
     }
 
     const shortId = nanoid(8);
-    const content = enableNote ? editorRef.current.getContent() : '';
+    const content = enableNote ? noteContent : '';
 
     const qrMetadata = {
       targetUrl: url,
@@ -102,17 +175,18 @@ const QR360Gen = ({ url, fileName }) => {
     };
 
     if (enableNote) qrMetadata.message = content;
-    if (enableExpiry) qrMetadata.expiration = new Date(expiration);
+    if (enableExpiry) qrMetadata.expiration = expiration ? expiration.toISOString() : null;
     if (enablePassword) qrMetadata.password = password;
     if (enableLabel) qrMetadata.label = belowQRText;
 
     try {
-      // CHANGED: Store in "qr360" instead of "qrCodes"
       await setDoc(doc(db, 'qr360', shortId), qrMetadata);
       console.log('QR metadata saved with ID:', shortId);
 
       const landingPageUrl = `${window.location.origin}/qr/${shortId}`;
       qrInstance.current.update({ data: landingPageUrl });
+
+      clearLocalData();
 
       setFadeOutInputModal(true);
       setTimeout(() => {
@@ -128,7 +202,9 @@ const QR360Gen = ({ url, fileName }) => {
 
   const handleCloseInputModal = () => {
     setFadeOutInputModal(true);
-    setTimeout(() => setShowInputModal(false), 200);
+    setTimeout(() => {
+      setShowInputModal(false);
+    }, 200);
   };
 
   const handleCloseQRModal = () => {
@@ -155,10 +231,18 @@ const QR360Gen = ({ url, fileName }) => {
             <h3>QR Options for "{fileName}"</h3>
 
             <div className="qr-options-row">
-              <label><input type="checkbox" checked={enableNote} onChange={() => setEnableNote(!enableNote)} /> Add Note</label>
-              <label><input type="checkbox" checked={enableExpiry} onChange={() => setEnableExpiry(!enableExpiry)} /> Set Expiry</label>
-              <label><input type="checkbox" checked={enablePassword} onChange={() => setEnablePassword(!enablePassword)} /> Set Password</label>
-              <label><input type="checkbox" checked={enableLabel} onChange={() => setEnableLabel(!enableLabel)} /> Set QR Label</label>
+              <label>
+                <input type="checkbox" checked={enableNote} onChange={() => setEnableNote(!enableNote)} /> Add Note
+              </label>
+              <label>
+                <input type="checkbox" checked={enableExpiry} onChange={() => setEnableExpiry(!enableExpiry)} /> Set Expiry
+              </label>
+              <label>
+                <input type="checkbox" checked={enablePassword} onChange={() => setEnablePassword(!enablePassword)} /> Set Password
+              </label>
+              <label>
+                <input type="checkbox" checked={enableLabel} onChange={() => setEnableLabel(!enableLabel)} /> Set QR Label
+              </label>
             </div>
 
             {enableNote && (
@@ -166,14 +250,15 @@ const QR360Gen = ({ url, fileName }) => {
                 <p>Add a Note</p>
                 <Editor
                   tinymceScriptSrc={`${process.env.PUBLIC_URL}/tinymce/tinymce.min.js`}
-                  onInit={(evt, editor) => editorRef.current = editor}
+                  value={noteContent}
+                  onEditorChange={(content) => setNoteContent(content)}
                   init={{
                     height: 400,
                     width: 600,
                     menubar: false,
                     plugins: 'link lists fullscreen',
                     toolbar: 'undo redo | formatselect | bold italic underline HR | alignleft aligncenter alignright | bullist | fullscreen',
-                    branding: false
+                    branding: false,
                   }}
                 />
               </>
@@ -227,7 +312,7 @@ const QR360Gen = ({ url, fileName }) => {
 
             <div className="qr-button-row">
               <button onClick={handleConfirmInputs}>Generate</button>
-              <button onClick={handleCloseInputModal}>Cancel</button>
+              <button onClick={() => { clearLocalData(); handleCloseInputModal(); }}>Cancel</button>
             </div>
           </div>
         </div>
