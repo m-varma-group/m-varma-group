@@ -1,0 +1,134 @@
+.upload-modal {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 300px;
+  max-height: 100vh;
+  overflow-y: auto; 
+  background: white;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  padding: 1rem;
+  z-index: 999;
+  border-radius: 8px;
+  font-family: sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+  scrollbar-width: thin; 
+  scrollbar-color: #888 #f1f1f1;
+}
+
+
+.upload-modal h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+.upload-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+}
+
+.minimize-button {
+  all: unset;
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.minimize-button:hover {
+  background: #eee;
+}
+
+.upload-modal.minimized {
+  height: auto;
+  max-height: none;
+  overflow: hidden;
+  padding-bottom: 0.5rem;
+}
+
+
+.upload-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.upload-modal::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 8px;
+}
+
+.upload-modal::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 8px;
+}
+
+.upload-modal::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+
+.upload-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.upload-item span {
+  font-size: 0.9rem;
+  font-weight: bold;
+  word-break: break-word;
+}
+
+.progress-container {
+  background-color: #eee;
+  border-radius: 3px;
+  height: 6px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 6px;
+  background-color: #007bff;
+  border-radius: 3px;
+  transition: width 0.3s ease-in-out;
+  width: 0%;
+}
+
+.upload-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+
+.close-button {
+  all: unset;
+  background-color: #1a73e8;
+  color: white;
+  border: none;
+  width: 120px;
+  height: 35px;
+  margin: 0rem auto;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: background-color 0.2s ease-in-out;
+  display: block;
+  text-align: center;
+}
+
+
+.close-button:hover {
+  background-color: #155ab6;
+}
+

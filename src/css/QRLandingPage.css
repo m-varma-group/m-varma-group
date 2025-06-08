@@ -1,0 +1,123 @@
+/* QRLandingPage.css */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background-color: #f9fafb;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Wrapper to center the content */
+.qr-landing-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.qr-landing-container {
+  width: 100%;
+  max-width: 700px;
+  padding: 2rem;
+  background: #fefefe;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  color: #333;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.qr-landing-message {
+  text-align: left;
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-left: 4px solid #007bff;
+  border-radius: 6px;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+.qr-landing-validity {
+  margin: 2rem 0 1rem;
+  font-weight: bold;
+  color: #444;
+}
+
+.qr-landing-button {
+  padding: 12px 24px;
+  font-size: 1rem;
+  border-radius: 8px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.qr-landing-button:hover {
+  background-color: #0056b3;
+}
+
+.qr-landing-expired {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-size: 1.5rem;
+  color: #c00;
+  padding: 2rem;
+  text-align: center;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 600px) {
+  .qr-landing-container {
+    padding: 1.5rem 1rem;
+  }
+
+  .qr-landing-button {
+    width: 100%;
+    font-size: 1rem;
+  }
+
+  .qr-landing-message {
+    font-size: 0.95rem;
+    padding: 0.75rem;
+  }
+
+  .qr-landing-validity {
+    font-size: 1rem;
+  }
+}
+
+.qr-password-section {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.qr-password-input {
+  padding: 10px;
+  font-size: 16px;
+  width: 250px;
+  margin-bottom: 10px;
+}
+
+.qr-password-submit {
+  padding: 10px 20px;
+  font-size: 16px;
+}
+
+.qr-password-error {
+  color: red;
+  margin-top: 5px;
+}
+
+
+
