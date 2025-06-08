@@ -334,7 +334,7 @@ const AppContent = () => {
       {!accessToken ? (
         <div className="login-screen">
           <div className="login-container">
-            <h1 className="main-title">M Verma Group</h1>
+            <h1 className="main-title">M Varma Group</h1>
             <label>
               <input
                 type="checkbox"
@@ -347,7 +347,7 @@ const AppContent = () => {
         </div>
       ) : (
         <>
-          <h1 className="main-title">M Verma Group</h1>
+          <h1 className="main-title">M Varma Group</h1>
           {showLoginMessage && <h3>You are logged in!</h3>}
           {userInfo && (
             <p>
