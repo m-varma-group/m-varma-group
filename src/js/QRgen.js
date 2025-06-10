@@ -133,7 +133,7 @@ const downloadQR = async () => {
   const width = qrCanvas.width;
   
   // Dynamic height based on text length
-  const height = belowQRText.length > 30 ? qrCanvas.height + 34 : qrCanvas.height + 24;
+  const height = belowQRText.length >= 30 ? qrCanvas.height + 34 : qrCanvas.height + 24;
   
   const finalCanvas = document.createElement('canvas');
   finalCanvas.width = width;
