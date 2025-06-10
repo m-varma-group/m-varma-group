@@ -38,6 +38,26 @@ const EditQRModal = ({ onClose }) => {
     setQrData({ message: '', password: '', expiration: null });
     setStatus('');
     setError('');
+    // Clear the TinyMCE editor
+    if (editorRef.current) {
+      editorRef.current.setContent('');
+    }
+  };
+
+  // Individual clear functions for each field
+  const clearMessage = () => {
+    if (editorRef.current) {
+      editorRef.current.setContent('');
+    }
+    setQrData(prev => ({ ...prev, message: '' }));
+  };
+
+  const clearPassword = () => {
+    setQrData(prev => ({ ...prev, password: '' }));
+  };
+
+  const clearExpiration = () => {
+    setQrData(prev => ({ ...prev, expiration: null }));
   };
 
 const scanImage = async (file) => {
@@ -73,6 +93,11 @@ const scanImage = async (file) => {
         ? new Date(data.expiration.seconds * 1000)
         : data.expiration || null
     });
+
+    // Update TinyMCE editor with the loaded message
+    if (editorRef.current) {
+      editorRef.current.setContent(data.message || '');
+    }
   } catch (err) {
     console.error(err);
     setError('QR scan failed. Make sure it contains /qr/:id');
@@ -123,7 +148,6 @@ const handleUpdate = async () => {
   }
 };
 
-
   useEffect(() => {
     const handleOutsideClick = (e) => {
       if (modalRef.current && !modalRef.current.contains(e.target)) {
@@ -143,7 +167,6 @@ const handleUpdate = async () => {
         return () => clearTimeout(timer);
     }
     }, [status, error]);
-
 
   return (
     <div className="qr-info-modal-backdrop">
@@ -176,7 +199,24 @@ const handleUpdate = async () => {
 
             <div className="qr-form-fields">
               <div style={{ marginBottom: '16px' }}>
-                <label>Note</label>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <label>Note</label>
+                  <button 
+                    type="button"
+                    onClick={clearMessage}
+                    style={{
+                      background: '#dc3545',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      fontSize: '12px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Clear Note
+                  </button>
+                </div>
                 <Editor
                   tinymceScriptSrc={`${process.env.PUBLIC_URL}/tinymce/tinymce.min.js`}
                   onInit={(evt, editor) => {
@@ -194,24 +234,62 @@ const handleUpdate = async () => {
                 />
               </div>
 
-              <label>Password</label>
-              <input
-                className="qr-input-url"
-                type="text"
-                value={qrData.password}
-                onChange={(e) => setQrData(prev => ({ ...prev, password: e.target.value }))}
-                placeholder="Enter password"
-              />
+              <div style={{ marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <label>Password</label>
+                  <button 
+                    type="button"
+                    onClick={clearPassword}
+                    style={{
+                      background: '#dc3545',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      fontSize: '12px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Clear Password
+                  </button>
+                </div>
+                <input
+                  className="qr-input-url"
+                  type="text"
+                  value={qrData.password}
+                  onChange={(e) => setQrData(prev => ({ ...prev, password: e.target.value }))}
+                  placeholder="Enter password"
+                />
+              </div>
 
-              <label>Expiration</label>
-              <DatePicker
-                selected={qrData.expiration}
-                onChange={(date) => setQrData(prev => ({ ...prev, expiration: date }))}
-                showTimeSelect
-                dateFormat="dd MMM yyyy, hh:mm aa"
-                placeholderText="Select expiration date & time"
-                className="qr-input-url"
-              />
+              <div style={{ marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <label>Expiration</label>
+                  <button 
+                    type="button"
+                    onClick={clearExpiration}
+                    style={{
+                      background: '#dc3545',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      fontSize: '12px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Clear Expiration
+                  </button>
+                </div>
+                <DatePicker
+                  selected={qrData.expiration}
+                  onChange={(date) => setQrData(prev => ({ ...prev, expiration: date }))}
+                  showTimeSelect
+                  dateFormat="dd MMM yyyy, hh:mm aa"
+                  placeholderText="Select expiration date & time"
+                  className="qr-input-url"
+                />
+              </div>
             </div>
           </>
         )}
@@ -219,7 +297,7 @@ const handleUpdate = async () => {
         <div className="upload-btn-group">
           <button className="upload-btn" onClick={() => fileInputRef.current.click()}>Upload QR Image</button>
           <button className="upload-btn" onClick={handleUpdate} style={{ backgroundColor: '#28a745' }}>Update</button>
-          <button className="upload-btn" onClick={handleClear} style={{ backgroundColor: '#ffc107', color: '#000' }}>Clear</button>
+          <button className="upload-btn" onClick={handleClear} style={{ backgroundColor: '#ffc107', color: '#000' }}>Clear All</button>
           <button className="upload-btn" onClick={handleClose} style={{ backgroundColor: '#6c757d' }}>Close</button>
         </div>
 
