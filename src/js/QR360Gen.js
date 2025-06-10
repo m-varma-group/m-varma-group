@@ -125,34 +125,40 @@ const QR360Gen = ({ url, fileName }) => {
     setNoteContent('');
   };
 
-  const downloadQR = () => {
-    const qrCanvas = qrRef.current.querySelector('canvas');
-    if (!qrCanvas) return;
-
-    const width = qrCanvas.width;
-    const height = qrCanvas.height + 24;
-
-    const finalCanvas = document.createElement('canvas');
-    finalCanvas.width = width;
-    finalCanvas.height = height;
-
-    const ctx = finalCanvas.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
-    ctx.drawImage(qrCanvas, 0, 0);
-
-    if (belowQRText) {
-      ctx.fillStyle = '#000000';
-      ctx.font = '12px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText(belowQRText, width / 2, qrCanvas.height + 16);
-    }
-
-    const link = document.createElement('a');
-    link.download = `${safeName}-qr360.png`;
-    link.href = finalCanvas.toDataURL('image/png');
-    link.click();
-  };
+  // Download QR code image with label below
+const downloadQR = async () => {
+  const qrCanvas = qrRef.current.querySelector('canvas');
+  if (!qrCanvas) return;
+  const width = qrCanvas.width;
+  
+  // Dynamic height based on text length
+  const height = belowQRText.length > 30 ? qrCanvas.height + 34 : qrCanvas.height + 24;
+  
+  const finalCanvas = document.createElement('canvas');
+  finalCanvas.width = width;
+  finalCanvas.height = height;
+  const ctx = finalCanvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+  ctx.drawImage(qrCanvas, 0, 0);
+  ctx.fillStyle = '#000000';
+  ctx.font = belowQRText.length <= 24 ? '12px Arial' : '10px Arial';
+  ctx.textAlign = 'center';
+ 
+  // Split text into lines of max 30 characters
+  const line1 = belowQRText.substring(0, 30);
+  const line2 = belowQRText.substring(30);
+ 
+  ctx.fillText(line1, width / 2, qrCanvas.height + 16);
+  if (line2) {
+    ctx.fillText(line2, width / 2, qrCanvas.height + 30);
+  }
+ 
+  const link = document.createElement('a');
+  link.download = `${safeName}-qr.png`;
+  link.href = finalCanvas.toDataURL('image/png');
+  link.click();
+};
 
   const handleGenerateClick = () => {
     setShowInputModal(true);
@@ -299,13 +305,13 @@ const QR360Gen = ({ url, fileName }) => {
                 <textarea
                   value={belowQRText}
                   onChange={(e) => {
-                    if (e.target.value.length <= 24) {
+                    if (e.target.value.length <= 60) {
                       setBelowQRText(e.target.value);
                     }
                   }}
                   placeholder=""
                   className="qr-input-label"
-                  maxLength={24}
+                  maxLength={60}
                 />
               </>
             )}
