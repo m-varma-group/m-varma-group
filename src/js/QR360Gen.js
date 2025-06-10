@@ -305,13 +305,13 @@ const downloadQR = async () => {
                 <textarea
                   value={belowQRText}
                   onChange={(e) => {
-                    if (e.target.value.length <= 60) {
+                    if (e.target.value.length <= 58) {
                       setBelowQRText(e.target.value);
                     }
                   }}
                   placeholder=""
                   className="qr-input-label"
-                  maxLength={60}
+                  maxLength={58}
                 />
               </>
             )}
