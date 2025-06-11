@@ -16,6 +16,7 @@ const QR360Gen = ({ url, fileName }) => {
   const [fadeOutInputModal, setFadeOutInputModal] = useState(false);
   const [fadeOutQRModal, setFadeOutQRModal] = useState(false);
   const [belowQRText, setBelowQRText] = useState('');
+  const [qrUrl, setQrUrl] = useState(''); // Store the generated QR URL
 
   const [enableNote, setEnableNote] = useState(false);
   const [enableExpiry, setEnableExpiry] = useState(false);
@@ -160,6 +161,24 @@ const downloadQR = async () => {
   link.click();
 };
 
+  // Copy QR URL to clipboard
+  const copyQRLink = async () => {
+    try {
+      await navigator.clipboard.writeText(qrUrl);
+      alert('Link copied to clipboard!');
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = qrUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert('Link copied to clipboard!');
+    }
+  };
+
   const handleGenerateClick = () => {
     setShowInputModal(true);
     setFadeOutInputModal(false);
@@ -190,6 +209,7 @@ const downloadQR = async () => {
       console.log('QR metadata saved with ID:', shortId);
 
       const landingPageUrl = `${window.location.origin}/qr/${shortId}`;
+      setQrUrl(landingPageUrl); // Store the URL for copying
       qrInstance.current.update({ data: landingPageUrl });
 
       clearLocalData();
@@ -333,6 +353,7 @@ const downloadQR = async () => {
             {belowQRText && <p style={{ textAlign: 'center', marginTop: '2px' }}>{belowQRText}</p>}
             <div className="qr-button-row">
               <button onClick={downloadQR}>Download</button>
+              <button onClick={copyQRLink}>Copy Link</button>
               <button onClick={handleCloseQRModal}>Close</button>
             </div>
           </div>
