@@ -32,7 +32,7 @@ export const useGoogleDriveLogin = ({
     flow: 'implicit',
 
     // Redirect URI used by Google after login completes
-    redirectUri: 'https://secure-dwg.vercel.app/oauth2/callback',
+    redirectUri: 'https://m-varma-group.vercel.app/oauth2/callback',
   });
 
   // Return the login function to be used in components
