@@ -343,7 +343,18 @@ const downloadQR = async () => {
 
             {enableLabel && (
               <>
-                <p>Set QR Label</p>
+                <div style={{ position: 'relative', textAlign: 'center', marginBottom: '5px' }}>
+                  <p style={{ margin: 0 }}>Set QR Label</p>
+                  <span style={{ 
+                    position: 'absolute', 
+                    right: 0, 
+                    top: 0, 
+                    fontSize: '12px', 
+                    color: '#666' 
+                  }}>
+                    {belowQRText.length}/58
+                  </span>
+                </div>
                 <textarea
                   value={belowQRText}
                   onChange={(e) => {

@@ -214,7 +214,7 @@ const handleUpdate = async () => {
                       cursor: 'pointer'
                     }}
                   >
-                    Clear Note
+                    Clear
                   </button>
                 </div>
                 <Editor
@@ -250,7 +250,7 @@ const handleUpdate = async () => {
                       cursor: 'pointer'
                     }}
                   >
-                    Clear Password
+                    Clear
                   </button>
                 </div>
                 <input
@@ -278,7 +278,7 @@ const handleUpdate = async () => {
                       cursor: 'pointer'
                     }}
                   >
-                    Clear Expiration
+                    Clear
                   </button>
                 </div>
                 <DatePicker

@@ -12,6 +12,7 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import QR360Gen from './QR360Gen';
+import Move360Modal from './Move360Modal';
 import '../css/EnscapeModal.css';
 
 const EnscapeModal = ({ onClose }) => {
@@ -20,6 +21,8 @@ const EnscapeModal = ({ onClose }) => {
   const [url, setUrl] = useState('');
   const [items, setItems] = useState([]);
   const [path, setPath] = useState([{ name: 'root', id: null }]);
+  const [showMoveModal, setShowMoveModal] = useState(false);
+  const [itemToMove, setItemToMove] = useState(null);
   const currentFolderId = path[path.length - 1].id;
 
   useEffect(() => {
@@ -193,6 +196,22 @@ const EnscapeModal = ({ onClose }) => {
     setPath((prev) => prev.slice(0, index + 1));
   };
 
+  // Move functionality handlers
+  const handleMoveItem = (item) => {
+    setItemToMove(item);
+    setShowMoveModal(true);
+  };
+
+  const handleCloseMoveModal = () => {
+    setShowMoveModal(false);
+    setItemToMove(null);
+  };
+
+  const handleMoveComplete = () => {
+    setShowMoveModal(false);
+    setItemToMove(null);
+  };
+
   return (
     <div
       className={`enscape-modal-overlay ${closing ? 'fade-out' : 'fade-in'}`}
@@ -294,8 +313,14 @@ const EnscapeModal = ({ onClose }) => {
                   >
                     📋
                   </button>
-
                 )}
+                <button
+                  onClick={() => handleMoveItem(item)}
+                  title="Move"
+                  className="enscape-copy-button"
+                >
+                  ↔️
+                </button>
                 <button
                   onClick={() => {
                     const newName = prompt('Enter new name:', item.fileName);
@@ -319,6 +344,14 @@ const EnscapeModal = ({ onClose }) => {
             </div>
           ))}
         </div>
+
+        {/* Move Modal Component */}
+        <Move360Modal
+          isOpen={showMoveModal}
+          itemToMove={itemToMove}
+          onClose={handleCloseMoveModal}
+          onMoveComplete={handleMoveComplete}
+        />
       </div>
     </div>
   );
