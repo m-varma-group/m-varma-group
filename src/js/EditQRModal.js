@@ -77,6 +77,20 @@ const EditQRModal = ({ onClose }) => {
     setQrLink('');
   };
 
+  // Function to sanitize filename
+  const sanitizeFilename = (filename) => {
+    if (!filename || filename.trim() === '') {
+      return 'qr-code';
+    }
+    // Remove or replace invalid characters for filenames
+    return filename
+      .trim()
+      .replace(/[<>:"/\\|?*]/g, '') // Remove invalid characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/\.+$/g, '') // Remove trailing dots
+      .substring(0, 100); // Limit length to 100 characters
+  };
+
   // Initialize QRCodeStyling instance
   useEffect(() => {
     if (!qrInstanceRef.current) {
@@ -98,7 +112,7 @@ const EditQRModal = ({ onClose }) => {
   }, []);
 
   // Download QR code image with label below
-  const downloadQRWithLabel = async (qrUrl, label, fileName = 'updated-qr') => {
+  const downloadQRWithLabel = async (qrUrl, label, fileName = 'qr-code') => {
     if (!qrInstanceRef.current) return;
 
     // Update QR instance with the URL
@@ -154,9 +168,10 @@ const EditQRModal = ({ onClose }) => {
         }
       }
      
-      // Download the image
+      // Download the image with sanitized filename
+      const sanitizedFileName = sanitizeFilename(fileName);
       const link = document.createElement('a');
-      link.download = `${fileName}-qr.png`;
+      link.download = `${sanitizedFileName}.png`;
       link.href = finalCanvas.toDataURL('image/png');
       link.click();
 
@@ -333,7 +348,9 @@ const EditQRModal = ({ onClose }) => {
       
       if (labelChanged) {
         const qrUrl = `${window.location.origin}/qr/${qrId}`;
-        const downloadSuccess = await downloadQRWithLabel(qrUrl, qrData.label, 'updated-qr');
+        // Use the label as filename, fallback to 'updated-qr' if label is empty
+        const fileName = (qrData.label.trim() || 'updated') + '-qr';
+        const downloadSuccess = await downloadQRWithLabel(qrUrl, qrData.label, fileName);
         
         if (downloadSuccess) {
           setStatus('QR Updated and downloaded with new label');
