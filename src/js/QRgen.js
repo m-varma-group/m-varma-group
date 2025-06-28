@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import QRCodeStyling from 'qr-code-styling';
-import { truncateFileName } from './utils.js';
+import { truncateFileName, getFolderChildren } from './utils.js';
 import { db } from '../firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
@@ -10,6 +10,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
 const QRgen = ({ fileId, isFolder, fileName }) => {
+  const accessToken = localStorage.getItem('accessToken');
   const [showInputModal, setShowInputModal] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [expiration, setExpiration] = useState(null);
@@ -17,14 +18,13 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
   const [fadeOutInputModal, setFadeOutInputModal] = useState(false);
   const [fadeOutQRModal, setFadeOutQRModal] = useState(false);
   const [belowQRText, setBelowQRText] = useState('');
-  const [qrUrl, setQrUrl] = useState(''); // Store the generated QR URL
+  const [qrUrl, setQrUrl] = useState('');
 
   const [enableNote, setEnableNote] = useState(false);
   const [enableExpiry, setEnableExpiry] = useState(false);
   const [enablePassword, setEnablePassword] = useState(false);
   const [enableLabel, setEnableLabel] = useState(false);
 
-  // New: Controlled note content state
   const [noteContent, setNoteContent] = useState('');
 
   const qrRef = useRef(null);
@@ -38,7 +38,6 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
 
   const STORAGE_KEY = `qrgen-${fileId}`;
 
-  // Initialize QRCodeStyling instance once
   useEffect(() => {
     if (!qrInstance.current) {
       qrInstance.current = new QRCodeStyling({
@@ -58,7 +57,6 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
     }
   }, []);
 
-  // Append QR code to container when showQR changes
   useEffect(() => {
     if (qrRef.current && qrInstance.current && showQR) {
       qrRef.current.innerHTML = '';
@@ -66,7 +64,6 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
     }
   }, [showQR]);
 
-  // Open input modal and load saved data if any
   const handleGenerateClick = () => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -92,7 +89,6 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
 
       setNoteContent(note || '');
     } else {
-      // Reset if no saved data
       setNoteContent('');
       setExpiration(null);
       setPassword('');
@@ -106,7 +102,6 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
     setFadeOutInputModal(false);
   };
 
-  // Save current form data to localStorage
   const saveTempData = () => {
     const data = {
       note: enableNote ? noteContent : '',
@@ -121,55 +116,48 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   };
 
-  // Clear localStorage temp data and reset note content state
   const clearTempData = () => {
     localStorage.removeItem(STORAGE_KEY);
     setNoteContent('');
   };
 
-// Download QR code image with label below
-const downloadQR = async () => {
-  const qrCanvas = qrRef.current.querySelector('canvas');
-  if (!qrCanvas) return;
-  const width = qrCanvas.width;
-  
-  // Dynamic height based on text length
-  const height = belowQRText.length > 30 ? qrCanvas.height + 34 : qrCanvas.height + 24;
-  
-  const finalCanvas = document.createElement('canvas');
-  finalCanvas.width = width;
-  finalCanvas.height = height;
-  const ctx = finalCanvas.getContext('2d');
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
-  ctx.drawImage(qrCanvas, 0, 0);
-  ctx.fillStyle = '#000000';
-  ctx.font = belowQRText.length <= 24 ? '12px Arial' : '10px Arial';
-  ctx.textAlign = 'center';
- 
-  // Split text into lines of max 30 characters
-  const line1 = belowQRText.substring(0, 30);
-  const line2 = belowQRText.substring(30);
- 
-  ctx.fillText(line1, width / 2, qrCanvas.height + 16);
-  if (line2) {
-    ctx.fillText(line2, width / 2, qrCanvas.height + 30);
-  }
- 
-  const link = document.createElement('a');
-  link.download = `${safeName}-qr.png`;
-  link.href = finalCanvas.toDataURL('image/png');
-  link.click();
-};
+  const downloadQR = async () => {
+    const qrCanvas = qrRef.current.querySelector('canvas');
+    if (!qrCanvas) return;
+    const width = qrCanvas.width;
+    const height = belowQRText.length > 30 ? qrCanvas.height + 34 : qrCanvas.height + 24;
 
-  // Copy QR URL to clipboard
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = width;
+    finalCanvas.height = height;
+    const ctx = finalCanvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+    ctx.drawImage(qrCanvas, 0, 0);
+    ctx.fillStyle = '#000000';
+    ctx.font = belowQRText.length <= 24 ? '12px Arial' : '10px Arial';
+    ctx.textAlign = 'center';
+
+    const line1 = belowQRText.substring(0, 30);
+    const line2 = belowQRText.substring(30);
+
+    ctx.fillText(line1, width / 2, qrCanvas.height + 16);
+    if (line2) {
+      ctx.fillText(line2, width / 2, qrCanvas.height + 30);
+    }
+
+    const link = document.createElement('a');
+    link.download = `${safeName}-qr.png`;
+    link.href = finalCanvas.toDataURL('image/png');
+    link.click();
+  };
+
   const copyQRLink = async () => {
     try {
       await navigator.clipboard.writeText(qrUrl);
       alert('Link copied to clipboard!');
     } catch (err) {
       console.error('Failed to copy link:', err);
-      // Fallback for older browsers
       const textArea = document.createElement('textarea');
       textArea.value = qrUrl;
       document.body.appendChild(textArea);
@@ -180,64 +168,81 @@ const downloadQR = async () => {
     }
   };
 
-  // On confirm, validate inputs, save metadata to Firestore, and generate QR code data URL
   const handleConfirmInputs = async () => {
-    if (enableExpiry && !expiration) {
-      alert('Please enter an expiration date and time.');
-      return;
-    }
+  if (enableExpiry && !expiration) {
+    alert('Please enter an expiration date and time.');
+    return;
+  }
 
-    const shortId = nanoid(8);
+  console.log('🔑 Access token received in QRgen:', accessToken);
 
-    const qrMetadata = {
-      targetUrl: baseUrl,
-      fileId,
-      isFolder,
-      fileName,
-      createdAt: serverTimestamp(),
-    };
+  const shortId = nanoid(8);
 
-    if (enableNote) qrMetadata.message = noteContent;
-    if (enableExpiry) qrMetadata.expiration = new Date(expiration);
-    if (enablePassword) qrMetadata.password = password;
-    if (enableLabel) qrMetadata.label = belowQRText;
-
-    try {
-      await setDoc(doc(db, 'qrCodes', shortId), qrMetadata);
-      console.log('QR metadata saved with ID:', shortId);
-
-      clearTempData();
-
-      const landingPageUrl = `${window.location.origin}/qr/${shortId}`;
-      setQrUrl(landingPageUrl); // Store the URL for copying
-      qrInstance.current.update({ data: landingPageUrl });
-
-      setFadeOutInputModal(true);
-      setTimeout(() => {
-        setShowInputModal(false);
-        setShowQR(true);
-        setFadeOutQRModal(false);
-      }, 200);
-    } catch (err) {
-      console.error('Error saving QR metadata:', err);
-      alert('Failed to generate QR. Please try again.');
-    }
+  const qrMetadata = {
+    targetUrl: baseUrl,
+    fileId,
+    isFolder,
+    fileName,
+    createdAt: serverTimestamp(),
   };
 
-  // Close input modal and save temporary data
+  if (enableNote) qrMetadata.message = noteContent;
+  if (enableExpiry) qrMetadata.expiration = new Date(expiration);
+  if (enablePassword) qrMetadata.password = password;
+  if (enableLabel) qrMetadata.label = belowQRText;
+
+  if (isFolder && accessToken) {
+    try {
+      console.log('📁 Attempting to fetch folder children for', fileId);
+      const children = await getFolderChildren(fileId, accessToken);
+      console.log('✅ Folder children fetched:', children);
+
+      qrMetadata.folderContents = children.map((child) => ({
+        id: child.id,
+        name: child.name,
+        type: child.mimeType,
+        link:
+          child.mimeType === 'application/vnd.google-apps.folder'
+            ? `https://drive.google.com/drive/folders/${child.id}`
+            : `https://drive.google.com/file/d/${child.id}/view`,
+      }));
+    } catch (err) {
+      console.error('❌ Error fetching folder children:', err);
+    }
+  }
+
+  console.log('📦 Final QR metadata to be saved:', qrMetadata);
+
+  try {
+    await setDoc(doc(db, 'qrCodes', shortId), qrMetadata);
+    clearTempData();
+    const landingPageUrl = `${window.location.origin}/qr/${shortId}`;
+    setQrUrl(landingPageUrl);
+    qrInstance.current.update({ data: landingPageUrl });
+    setFadeOutInputModal(true);
+    setTimeout(() => {
+      setShowInputModal(false);
+      setShowQR(true);
+      setFadeOutQRModal(false);
+    }, 200);
+  } catch (err) {
+    console.error('❌ Error saving QR metadata to Firestore:', err);
+    alert('Failed to generate QR. Please try again.');
+  }
+};
+
+
   const handleCloseInputModal = () => {
     saveTempData();
     setFadeOutInputModal(true);
     setTimeout(() => setShowInputModal(false), 200);
   };
 
-  // Close QR modal
   const handleCloseQRModal = () => {
     setFadeOutQRModal(true);
     setTimeout(() => setShowQR(false), 200);
   };
 
-  // Close modals on overlay click
   const handleOverlayClick = (e, type) => {
     if (e.target.classList.contains('qr-modal-overlay')) {
       type === 'input' ? handleCloseInputModal() : handleCloseQRModal();

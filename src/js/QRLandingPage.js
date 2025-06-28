@@ -4,6 +4,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import FileEmbedding from './FileEmbedding';
 import '../css/QRLandingPage.css';
+import FolderFileList from './FolderFileList';
 
 const QRLandingPage = () => {
   const { id } = useParams();
@@ -134,6 +135,11 @@ const QRLandingPage = () => {
       </div>
     );
   }
+
+  if (data.isFolder) {
+  return <FolderFileList shortId={id} />;
+}
+
 
   return <FileEmbedding url={data.targetUrl} source={sourceCollection} />;
 };
