@@ -18,7 +18,8 @@ const EditQRModal = ({ onClose }) => {
     message: '',
     password: '',
     expiration: null,
-    label: ''
+    label: '',
+    targetUrl: ''
   });
   const [originalLabel, setOriginalLabel] = useState(''); // Track original label
   const [closing, setClosing] = useState(false);
@@ -41,7 +42,7 @@ const EditQRModal = ({ onClose }) => {
   const handleClear = () => {
     setQrImage(null);
     setQrId(null);
-    setQrData({ message: '', password: '', expiration: null, label: '' });
+    setQrData({ message: '', password: '', expiration: null, label: '', targetUrl: '' });
     setOriginalLabel('');
     setStatus('');
     setError('');
@@ -71,6 +72,10 @@ const EditQRModal = ({ onClose }) => {
 
   const clearLabel = () => {
     setQrData(prev => ({ ...prev, label: '' }));
+  };
+
+  const clearTargetUrl = () => {
+    setQrData(prev => ({ ...prev, targetUrl: '' }));
   };
 
   const clearLink = () => {
@@ -227,7 +232,8 @@ const EditQRModal = ({ onClose }) => {
         expiration: data.expiration?.seconds
           ? new Date(data.expiration.seconds * 1000)
           : data.expiration || null,
-        label: labelValue
+        label: labelValue,
+        targetUrl: data.targetUrl || ''
       });
 
       // Store original label for comparison
@@ -280,7 +286,8 @@ const EditQRModal = ({ onClose }) => {
         expiration: data.expiration?.seconds
           ? new Date(data.expiration.seconds * 1000)
           : data.expiration || null,
-        label: labelValue
+        label: labelValue,
+        targetUrl: data.targetUrl || ''
       });
 
       // Store original label for comparison
@@ -340,6 +347,7 @@ const EditQRModal = ({ onClose }) => {
         password: qrData.password,
         expiration: qrData.expiration,
         label: qrData.label,
+        targetUrl: qrData.targetUrl,
         updatedAt: new Date()
       });
 
@@ -519,6 +527,34 @@ const EditQRModal = ({ onClose }) => {
         {/* Form fields - only show when QR data is loaded */}
         {qrId && (
           <div className="qr-form-fields">
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <label>Target URL</label>
+                <button 
+                  type="button"
+                  onClick={clearTargetUrl}
+                  style={{
+                    background: '#dc3545',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    padding: '4px 8px',
+                    fontSize: '12px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Clear
+                </button>
+              </div>
+              <input
+                className="qr-input-url"
+                type="url"
+                value={qrData.targetUrl}
+                onChange={(e) => setQrData(prev => ({ ...prev, targetUrl: e.target.value }))}
+                placeholder="Enter target URL"
+              />
+            </div>
+
             <div style={{ marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <label>Note</label>
