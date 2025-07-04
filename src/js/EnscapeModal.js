@@ -295,9 +295,12 @@ const EnscapeModal = ({ onClose }) => {
                 )}
               </div>
               <div className="enscape-file-actions">
-                {!item.isFolder && (
-                <QR360Gen url={item.url} fileName={item.fileName} />
-                )}
+                <QR360Gen 
+                  url={item.url} 
+                  fileName={item.fileName} 
+                  isFolder={item.isFolder}
+                  folderId={item.isFolder ? item.id : null}
+                />
                 {!item.isFolder && (
                   <button
                     onClick={async () => {

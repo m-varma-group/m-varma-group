@@ -1,14 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import QRCodeStyling from 'qr-code-styling';
 import { db } from '../firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 import { Editor } from '@tinymce/tinymce-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import '../css/QRgen.css';
 
-const QR360Gen = ({ url, fileName }) => {
+const QR360Gen = ({ url, fileName, isFolder, folderId }) => {
   const [showInputModal, setShowInputModal] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [expiration, setExpiration] = useState(null);
@@ -29,8 +29,9 @@ const QR360Gen = ({ url, fileName }) => {
   const qrRef = useRef(null);
   const qrInstance = useRef(null);
 
-  const localKey = `qr360-${fileName}`;
-  const safeName = fileName.replace(/[^\w\d_.-]/g, '_');
+  // Create a unique storage key based on whether it's a folder or file
+  const storageKey = isFolder ? `qr360-folder-${folderId}` : `qr360-${fileName}`;
+  const safeName = fileName.replace(/[^\w\d.-]/g, '');
 
   // Initialize QR instance once
   useEffect(() => {
@@ -63,7 +64,7 @@ const QR360Gen = ({ url, fileName }) => {
   // Load saved data from localStorage on input modal open
   useEffect(() => {
     if (showInputModal) {
-      const saved = localStorage.getItem(localKey);
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
         try {
           const data = JSON.parse(saved);
@@ -91,7 +92,7 @@ const QR360Gen = ({ url, fileName }) => {
         setNoteContent('');
       }
     }
-  }, [showInputModal, localKey]);
+  }, [showInputModal, storageKey]);
 
   // Save form data to localStorage whenever relevant data changes (only when modal open)
   useEffect(() => {
@@ -107,7 +108,7 @@ const QR360Gen = ({ url, fileName }) => {
       expiration: expiration ? expiration.toISOString() : null,
       note: noteContent,
     };
-    localStorage.setItem(localKey, JSON.stringify(data));
+    localStorage.setItem(storageKey, JSON.stringify(data));
   }, [
     enableNote,
     enableExpiry,
@@ -118,48 +119,72 @@ const QR360Gen = ({ url, fileName }) => {
     expiration,
     noteContent,
     showInputModal,
-    localKey,
+    storageKey,
   ]);
 
   const clearLocalData = () => {
-    localStorage.removeItem(localKey);
+    localStorage.removeItem(storageKey);
     setNoteContent('');
   };
 
+  // Get all URLs from a folder recursively
+  const getFolderUrls = async (folderId) => {
+    const urls = [];
+    const q = query(collection(db, '360_urls'), where('parentId', '==', folderId));
+    const snapshot = await getDocs(q);
+
+    for (const docItem of snapshot.docs) {
+      const data = docItem.data();
+      if (data.isFolder) {
+        // Recursively get URLs from subfolders
+        const subUrls = await getFolderUrls(docItem.id);
+        urls.push(...subUrls);
+      } else {
+        // Add file URL
+        urls.push({
+          fileName: data.fileName,
+          url: data.url
+        });
+      }
+    }
+
+    return urls;
+  };
+
   // Download QR code image with label below
-const downloadQR = async () => {
-  const qrCanvas = qrRef.current.querySelector('canvas');
-  if (!qrCanvas) return;
-  const width = qrCanvas.width;
-  
-  // Dynamic height based on text length
-  const height = belowQRText.length > 30 ? qrCanvas.height + 34 : qrCanvas.height + 24;
-  
-  const finalCanvas = document.createElement('canvas');
-  finalCanvas.width = width;
-  finalCanvas.height = height;
-  const ctx = finalCanvas.getContext('2d');
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
-  ctx.drawImage(qrCanvas, 0, 0);
-  ctx.fillStyle = '#000000';
-  ctx.font = belowQRText.length <= 24 ? '12px Arial' : '10px Arial';
-  ctx.textAlign = 'center';
- 
-  // Split text into lines of max 30 characters
-  const line1 = belowQRText.substring(0, 30);
-  const line2 = belowQRText.substring(30);
- 
-  ctx.fillText(line1, width / 2, qrCanvas.height + 16);
-  if (line2) {
-    ctx.fillText(line2, width / 2, qrCanvas.height + 30);
-  }
- 
-  const link = document.createElement('a');
-  link.download = `${safeName}-qr.png`;
-  link.href = finalCanvas.toDataURL('image/png');
-  link.click();
-};
+  const downloadQR = async () => {
+    const qrCanvas = qrRef.current.querySelector('canvas');
+    if (!qrCanvas) return;
+    const width = qrCanvas.width;
+
+    // Dynamic height based on text length
+    const height = belowQRText.length > 30 ? qrCanvas.height + 34 : qrCanvas.height + 24;
+
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = width;
+    finalCanvas.height = height;
+    const ctx = finalCanvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+    ctx.drawImage(qrCanvas, 0, 0);
+    ctx.fillStyle = '#000000';
+    ctx.font = belowQRText.length <= 24 ? '12px Arial' : '10px Arial';
+    ctx.textAlign = 'center';
+
+    // Split text into lines of max 30 characters
+    const line1 = belowQRText.substring(0, 30);
+    const line2 = belowQRText.substring(30);
+
+    ctx.fillText(line1, width / 2, qrCanvas.height + 16);
+    if (line2) {
+      ctx.fillText(line2, width / 2, qrCanvas.height + 30);
+    }
+
+    const link = document.createElement('a');
+    link.download = `${safeName}-qr.png`;
+    link.href = finalCanvas.toDataURL('image/png');
+    link.click();
+  };
 
   // Copy QR URL to clipboard
   const copyQRLink = async () => {
@@ -194,10 +219,26 @@ const downloadQR = async () => {
     const content = enableNote ? noteContent : '';
 
     const qrMetadata = {
-      targetUrl: url,
       fileName,
       createdAt: serverTimestamp(),
+      isFolder: isFolder || false,
     };
+
+    if (isFolder) {
+      // For folders, get all URLs within the folder
+      try {
+        const folderUrls = await getFolderUrls(folderId);
+        qrMetadata.folderUrls = folderUrls;
+        qrMetadata.folderId = folderId;
+      } catch (err) {
+        console.error('Error getting folder URLs:', err);
+        alert('Failed to get folder contents. Please try again.');
+        return;
+      }
+    } else {
+      // For individual files
+      qrMetadata.targetUrl = url;
+    }
 
     if (enableNote) qrMetadata.message = content;
     if (enableExpiry) qrMetadata.expiration = expiration ? expiration.toISOString() : null;
@@ -254,7 +295,7 @@ const downloadQR = async () => {
       {showInputModal && (
         <div className="qr-modal-overlay" onClick={(e) => handleOverlayClick(e, 'input')}>
           <div className={`qr-modal ${fadeOutInputModal ? 'fade-out' : ''}`} onClick={(e) => e.stopPropagation()}>
-            <h3>QR Options for "{fileName}"</h3>
+            <h3>QR Options for "{fileName}" {isFolder && '(Folder)'}</h3>
 
             <div className="qr-options-row">
               <label>
@@ -359,7 +400,7 @@ const downloadQR = async () => {
       {showQR && (
         <div className="qr-modal-overlay" onClick={(e) => handleOverlayClick(e, 'qr')}>
           <div className={`qr-modal ${fadeOutQRModal ? 'fade-out' : ''}`} onClick={(e) => e.stopPropagation()}>
-            <h3>QR for "{fileName}"</h3>
+            <h3>QR for "{fileName}" {isFolder && '(Folder)'}</h3>
             <div className="qr-preview" ref={qrRef}></div>
             {belowQRText && <p style={{ textAlign: 'center', marginTop: '2px' }}>{belowQRText}</p>}
             <div className="qr-button-row">
