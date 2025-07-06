@@ -188,6 +188,169 @@ const EnscapeModal = ({ onClose }) => {
     await updateDoc(doc(db, '360_urls', id), { fileName: trimmedNewName });
   };
 
+  const handleUpdateUrl = async (id, newUrl) => {
+    const trimmedNewUrl = newUrl.trim();
+    if (!trimmedNewUrl) {
+      alert('URL cannot be empty.');
+      return;
+    }
+
+    const formattedUrl = formatUrl(trimmedNewUrl);
+
+    // Check for duplicate URL in current folder (excluding the current item)
+    const urlQuery = currentFolderId
+      ? query(
+          collection(db, '360_urls'),
+          where('parentId', '==', currentFolderId),
+          where('url', '==', formattedUrl)
+        )
+      : query(
+          collection(db, '360_urls'),
+          where('parentId', '==', null),
+          where('url', '==', formattedUrl)
+        );
+
+    const urlSnapshot = await getDocs(urlQuery);
+
+    // Check if URL exists and it's not the current item
+    const duplicateDoc = urlSnapshot.docs.find(doc => doc.id !== id);
+    if (duplicateDoc) {
+      const existingDoc = duplicateDoc.data();
+      alert(`URL already exists by the name: ${existingDoc.fileName}`);
+      return;
+    }
+
+    try {
+      await updateDoc(doc(db, '360_urls', id), { url: formattedUrl });
+      alert('URL updated successfully.');
+    } catch (error) {
+      alert('Failed to update URL.');
+    }
+  };
+
+  const handleEdit = (item) => {
+    // Show checkbox selection interface for both files and folders
+    showEditDialog(item);
+  };
+
+  const showEditDialog = (item) => {
+    // Create a modal-like dialog with checkboxes
+    const dialogHTML = `
+      <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); max-width: 400px; width: 90%;">
+          <h3 style="margin: 0 0 15px 0; color: #333;">Edit "${item.fileName}"</h3>
+          
+          <div style="margin-bottom: 15px;">
+            <label style="display: flex; align-items: center; margin-bottom: 10px; cursor: pointer;">
+              <input type="checkbox" id="editName" style="margin-right: 8px;">
+              <span>Edit Name</span>
+            </label>
+            <input type="text" id="newName" placeholder="Enter new name" value="${item.fileName}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;" disabled>
+          </div>
+          
+          ${!item.isFolder ? `
+          <div style="margin-bottom: 20px;">
+            <label style="display: flex; align-items: center; margin-bottom: 10px; cursor: pointer;">
+              <input type="checkbox" id="editUrl" style="margin-right: 8px;">
+              <span>Edit URL</span>
+            </label>
+            <input type="text" id="newUrl" placeholder="Enter new URL" value="${item.url}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;" disabled>
+          </div>
+          ` : '<div style="margin-bottom: 20px;"></div>'}
+          
+          <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button id="cancelEdit" style="padding: 8px 16px; border: 1px solid #6c757d; background: #6c757d; color: white; border-radius: 4px; cursor: pointer;">Cancel</button>
+            <button id="saveEdit" style="padding: 8px 16px; border: none; background: #007bff; color: white; border-radius: 4px; cursor: pointer;">Save</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Add the dialog to the page
+    const dialogElement = document.createElement('div');
+    dialogElement.innerHTML = dialogHTML;
+    document.body.appendChild(dialogElement);
+
+    // Get references to elements
+    const nameCheckbox = dialogElement.querySelector('#editName');
+    const urlCheckbox = dialogElement.querySelector('#editUrl');
+    const nameInput = dialogElement.querySelector('#newName');
+    const urlInput = dialogElement.querySelector('#newUrl');
+    const cancelButton = dialogElement.querySelector('#cancelEdit');
+    const saveButton = dialogElement.querySelector('#saveEdit');
+
+    // Handle checkbox changes
+    nameCheckbox.addEventListener('change', () => {
+      nameInput.disabled = !nameCheckbox.checked;
+      if (nameCheckbox.checked) {
+        nameInput.focus();
+      }
+    });
+
+    if (urlCheckbox) {
+      urlCheckbox.addEventListener('change', () => {
+        urlInput.disabled = !urlCheckbox.checked;
+        if (urlCheckbox.checked) {
+          urlInput.focus();
+        }
+      });
+    }
+
+    // Handle cancel
+    const closeDialog = () => {
+      document.body.removeChild(dialogElement);
+    };
+
+    cancelButton.addEventListener('click', closeDialog);
+    
+    // Handle save
+    saveButton.addEventListener('click', async () => {
+      const promises = [];
+      
+      if (nameCheckbox.checked) {
+        const newName = nameInput.value.trim();
+        if (newName && newName !== item.fileName) {
+          promises.push(handleUpdateName(item.id, newName));
+        }
+      }
+      
+      if (urlCheckbox && urlCheckbox.checked) {
+        const newUrl = urlInput.value.trim();
+        if (newUrl && newUrl !== item.url) {
+          promises.push(handleUpdateUrl(item.id, newUrl));
+        }
+      }
+      
+      if (promises.length === 0) {
+        alert('Please select at least one field to edit and make changes.');
+        return;
+      }
+      
+      try {
+        await Promise.all(promises);
+        closeDialog();
+      } catch (error) {
+        console.error('Error updating item:', error);
+      }
+    });
+
+    // Close dialog when clicking outside
+    dialogElement.addEventListener('click', (e) => {
+      if (e.target === dialogElement) {
+        closeDialog();
+      }
+    });
+
+    // Handle ESC key
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') {
+        closeDialog();
+        document.removeEventListener('keydown', handleEsc);
+      }
+    };
+    document.addEventListener('keydown', handleEsc);
+  };
+
   const handleOpenFolder = (folder) => {
     setPath((prev) => [...prev, { name: folder.fileName, id: folder.id }]);
   };
@@ -325,13 +488,8 @@ const EnscapeModal = ({ onClose }) => {
                   ↔️
                 </button>
                 <button
-                  onClick={() => {
-                    const newName = prompt('Enter new name:', item.fileName);
-                    if (newName && newName.trim() && newName !== item.fileName) {
-                      handleUpdateName(item.id, newName);
-                    }
-                  }}
-                  title="Rename"
+                  onClick={() => handleEdit(item)}
+                  title={item.isFolder ? "Rename" : "Edit Name/URL"}
                   className="enscape-settings-button"
                 >
                   ⚙️
