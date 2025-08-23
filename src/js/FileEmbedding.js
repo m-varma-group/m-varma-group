@@ -1,4 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 // Dynamically import the correct CSS file based on source
 const loadStylesheet = (source) => {
@@ -36,15 +38,14 @@ const extractPreviewUrl = (url) => {
 };
 
 const FileEmbedding = ({ url, source }) => {
+  const [showOverlayLogo, setShowOverlayLogo] = useState(true);
+
   useEffect(() => {
     loadStylesheet(source);
 
     const disableRightClick = (e) => e.preventDefault();
     const disableKeys = (e) => {
-      if (
-        (e.ctrlKey && (e.key === 's' || e.key === 'u')) ||
-        e.key === 'F12'
-      ) {
+      if ((e.ctrlKey && (e.key === 's' || e.key === 'u')) || e.key === 'F12') {
         e.preventDefault();
         e.stopPropagation();
       }
@@ -58,6 +59,35 @@ const FileEmbedding = ({ url, source }) => {
       document.removeEventListener('keydown', disableKeys);
     };
   }, [source]);
+
+  // Extract QR ID automatically from the URL
+  const getQRIdFromPath = () => {
+    if (source !== 'qr360') return null;
+    const path = window.location.pathname; // e.g., /qr/abc123
+    const match = path.match(/\/qr\/([^/]+)/);
+    return match ? match[1] : null;
+  };
+
+  const qrId = getQRIdFromPath();
+
+  // Fetch QR metadata if source is qr360
+  useEffect(() => {
+    const fetchQRData = async () => {
+      if (source === 'qr360' && qrId) {
+        try {
+          const docRef = doc(db, 'qr360', qrId);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setShowOverlayLogo(data.showOverlayLogo ?? true); // default true
+          }
+        } catch (err) {
+          console.error('Error fetching QR metadata:', err);
+        }
+      }
+    };
+    fetchQRData();
+  }, [source, qrId]);
 
   const embedUrl = extractPreviewUrl(url);
 
@@ -88,13 +118,9 @@ const FileEmbedding = ({ url, source }) => {
       />
       <div className="iframe-blocker" />
 
-      {source === 'qr360' && (
+      {source === 'qr360' && showOverlayLogo && (
         <>
-          <img
-            src="/overlay_logo.png"
-            alt="Centered Logo"
-            className="center-image"
-          />
+          <img src="/overlay_logo.png" alt="Centered Logo" className="center-image" />
           <div className="top-right-blocker" />
           <div className="bottom-blocker" />
           <div className="side-blocker left-blocker" />

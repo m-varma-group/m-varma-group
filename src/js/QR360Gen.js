@@ -23,6 +23,9 @@ const QR360Gen = ({ url, fileName, isFolder, folderId }) => {
   const [enablePassword, setEnablePassword] = useState(false);
   const [enableLabel, setEnableLabel] = useState(false);
 
+  // NEW: overlay logo toggle (default ON)
+  const [showOverlayLogo, setShowOverlayLogo] = useState(true);
+
   // NEW: note content as controlled state
   const [noteContent, setNoteContent] = useState('');
 
@@ -76,9 +79,11 @@ const QR360Gen = ({ url, fileName, isFolder, folderId }) => {
           setBelowQRText(data.belowQRText || '');
           setExpiration(data.expiration ? new Date(data.expiration) : null);
           setNoteContent(data.note || '');
+          setShowOverlayLogo(data.showOverlayLogo !== undefined ? data.showOverlayLogo : true); // restore toggle
         } catch (err) {
           console.error('Error parsing saved QR data:', err);
           setNoteContent('');
+          setShowOverlayLogo(true);
         }
       } else {
         // Reset all states if no saved data
@@ -90,6 +95,7 @@ const QR360Gen = ({ url, fileName, isFolder, folderId }) => {
         setBelowQRText('');
         setExpiration(null);
         setNoteContent('');
+        setShowOverlayLogo(true); // default ON
       }
     }
   }, [showInputModal, storageKey]);
@@ -107,6 +113,7 @@ const QR360Gen = ({ url, fileName, isFolder, folderId }) => {
       belowQRText,
       expiration: expiration ? expiration.toISOString() : null,
       note: noteContent,
+      showOverlayLogo, // save toggle state
     };
     localStorage.setItem(storageKey, JSON.stringify(data));
   }, [
@@ -120,11 +127,13 @@ const QR360Gen = ({ url, fileName, isFolder, folderId }) => {
     noteContent,
     showInputModal,
     storageKey,
+    showOverlayLogo,
   ]);
 
   const clearLocalData = () => {
     localStorage.removeItem(storageKey);
     setNoteContent('');
+    setShowOverlayLogo(true);
   };
 
   // Get all URLs from a folder recursively
@@ -222,6 +231,7 @@ const QR360Gen = ({ url, fileName, isFolder, folderId }) => {
       fileName,
       createdAt: serverTimestamp(),
       isFolder: isFolder || false,
+      showOverlayLogo, // NEW: store overlay toggle
     };
 
     if (isFolder) {
@@ -309,6 +319,9 @@ const QR360Gen = ({ url, fileName, isFolder, folderId }) => {
               </label>
               <label>
                 <input type="checkbox" checked={enableLabel} onChange={() => setEnableLabel(!enableLabel)} /> Set QR Label
+              </label>
+              <label>
+                <input type="checkbox" checked={showOverlayLogo} onChange={() => setShowOverlayLogo(!showOverlayLogo)} /> Show Logo
               </label>
             </div>
 
