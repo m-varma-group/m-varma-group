@@ -43,13 +43,14 @@
   }
 }
 
-/* Updated Folder List View Styles */
+/* Main Container */
 main {
   max-width: 960px;
   margin: auto;
   padding: 0rem 2rem 2rem;
 }
 
+/* Header Styles */
 h1 {
   font-size: clamp(2rem, 5vw, 3.5rem);
   margin-top: 2rem;
@@ -58,57 +59,237 @@ h1 {
   text-align: left;
 }
 
-ul {
+/* Navigation Styles */
+.folder-navigation {
+  margin-bottom: 20px;
+}
+
+.breadcrumb-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #666;
+}
+
+.breadcrumb-button {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  font: inherit;
+  transition: color 0.2s ease;
+}
+
+.breadcrumb-button:hover {
+  color: #0056b3;
+}
+
+.back-button {
+  margin-top: 10px;
+  padding: 8px 16px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
+}
+
+.back-button:hover {
+  background: #0056b3;
+}
+
+/* File List Styles */
+.file-list {
   list-style: none;
   padding: 0;
   margin-top: 1rem;
 }
 
-li {
+.file-list-item {
   background-color: white;
   border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  padding: 0.8rem;
-  margin-bottom: 0.6rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  transition: background-color 0.3s ease-in-out;
-  cursor: pointer;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+  overflow: hidden;
 }
 
-li:hover {
-  background-color: #f0f0f0;
+.file-list-item:hover {
+  background-color: #f8f9fa;
+  border-color: #d0d7de;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.file-list-item:last-child {
+  margin-bottom: 0;
 }
 
 .file-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
 }
 
 .file-link {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  font-size: 1rem;
-  flex-grow: 1;
-  color: #1a1a1a;
+  padding: 16px;
+  width: 100%;
   text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+}
+
+.file-link:hover {
+  background-color: transparent;
 }
 
 .file-icon {
   flex-shrink: 0;
-  width: 1.5em;
-  text-align: center;
-  font-size: 1.2em;
-  line-height: 1.4;
-  margin-right: 0.3em;
+  margin-right: 12px;
+  font-size: 24px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-name-container {
+  flex: 1;
+  min-width: 0;
 }
 
 .file-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: #24292f;
+  margin-bottom: 2px;
   word-break: break-word;
   overflow-wrap: break-word;
   line-height: 1.4;
+}
+
+.file-meta {
+  font-size: 12px;
+  color: #656d76;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.folder-arrow {
+  color: #656d76;
+  font-size: 18px;
+  margin-left: 8px;
+  transition: transform 0.2s ease;
+}
+
+.file-link:hover .folder-arrow {
+  transform: translateX(4px);
+}
+
+.folder-link .file-name {
+  color: #1f2328;
+  font-weight: 600;
+}
+
+.folder-link .file-icon {
+  color: #54aeff;
+}
+
+/* Error and Empty States */
+.error-message {
+  color: #d1242f;
+  background: #fff8f8;
+  border: 1px solid #ffd6d6;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 16px 0;
+  font-size: 14px;
+}
+
+.loading-message {
+  color: #656d76;
+  font-style: italic;
+  text-align: center;
+  padding: 32px 16px;
+}
+
+.empty-message {
+  color: #656d76;
+  text-align: center;
+  padding: 32px 16px;
+  background: #f6f8fa;
+  border-radius: 8px;
+  border: 1px dashed #d0d7de;
+}
+
+/* File Error Indicator */
+.file-error {
+  color: #d1242f;
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  main {
+    padding: 0 1rem 2rem;
+  }
+  
+  .file-link {
+    padding: 12px;
+  }
+  
+  .file-icon {
+    font-size: 20px;
+    width: 28px;
+    height: 28px;
+    margin-right: 10px;
+  }
+  
+  .file-name {
+    font-size: 15px;
+  }
+  
+  .breadcrumb-nav {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .file-link {
+    padding: 10px;
+  }
+  
+  .file-icon {
+    font-size: 18px;
+    width: 24px;
+    height: 24px;
+    margin-right: 8px;
+  }
+  
+  .file-name {
+    font-size: 14px;
+  }
+  
+  .file-meta {
+    font-size: 11px;
+  }
 }

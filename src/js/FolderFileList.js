@@ -1,21 +1,29 @@
+/* eslint-disable jsx-a11y/anchor-is-valid */
+/* eslint-disable react/jsx-no-comment-textnodes */
 import React, { useEffect, useState } from 'react';
 import getFileIcon from './FileIcon';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useParams } from 'react-router-dom';
+import '../css/FolderFileList.css';
 
 const FolderFileList = ({ shortId: propShortId, label: propLabel, source: propSource }) => {
   const { id: routeId } = useParams();
   const shortId = propShortId || routeId;
 
-  const [files, setFiles] = useState([]);
+  const [currentFolderContents, setCurrentFolderContents] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [label, setLabel] = useState(propLabel);
   const [source, setSource] = useState(propSource);
   const [dataType, setDataType] = useState(null); // 'drive' or 'enscape'
-  const [showOverlayLogo, setShowOverlayLogo] = useState(true); // NEW: overlay control
+  const [showOverlayLogo, setShowOverlayLogo] = useState(true);
+  
+  // Navigation state for nested folders
+  const [folderHistory, setFolderHistory] = useState([]);
+  const [currentFolderPath, setCurrentFolderPath] = useState('');
+  const [allFolderData, setAllFolderData] = useState(null); // Store complete nested structure
 
   // Dynamically load CSS
   const loadStylesheet = (source) => {
@@ -33,6 +41,70 @@ const FolderFileList = ({ shortId: propShortId, label: propLabel, source: propSo
   useEffect(() => {
     if (source) loadStylesheet(source);
   }, [source]);
+
+  // Find folder by ID in nested structure
+  const findFolderById = (items, targetId) => {
+    for (const item of items) {
+      if (item.id === targetId) {
+        return item;
+      }
+      if (item.children && item.children.length > 0) {
+        const found = findFolderById(item.children, targetId);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  // Navigate to a specific folder
+  const navigateToFolder = (folder) => {
+    if (!folder.children || folder.children.length === 0) {
+      // Empty folder, just show empty state
+      setCurrentFolderContents([]);
+    } else {
+      setCurrentFolderContents(folder.children);
+    }
+    
+    // Update navigation history and path
+    setFolderHistory(prev => [...prev, {
+      id: folder.id,
+      name: folder.name,
+      path: currentFolderPath
+    }]);
+    
+    setCurrentFolderPath(currentFolderPath ? `${currentFolderPath}/${folder.name}` : folder.name);
+  };
+
+  // Navigate back to previous folder
+  const navigateBack = () => {
+    if (folderHistory.length === 0) return;
+    
+    const previousFolder = folderHistory[folderHistory.length - 1];
+    setFolderHistory(prev => prev.slice(0, -1));
+    
+    if (folderHistory.length === 1) {
+      // Going back to root
+      setCurrentFolderContents(allFolderData);
+      setCurrentFolderPath('');
+    } else {
+      // Going back to parent folder
+      const parentHistory = folderHistory.slice(0, -1);
+      const parentFolderId = parentHistory[parentHistory.length - 1].id;
+      const parentFolder = findFolderById(allFolderData, parentFolderId);
+      
+      if (parentFolder) {
+        setCurrentFolderContents(parentFolder.children || []);
+        setCurrentFolderPath(previousFolder.path);
+      }
+    }
+  };
+
+  // Navigate to root folder
+  const navigateToRoot = () => {
+    setCurrentFolderContents(allFolderData);
+    setFolderHistory([]);
+    setCurrentFolderPath('');
+  };
 
   useEffect(() => {
     const fetchFolderData = async () => {
@@ -57,14 +129,19 @@ const FolderFileList = ({ shortId: propShortId, label: propLabel, source: propSo
 
         const data = docSnap.data();
 
-        // Set overlay based on Firestore if qr360
-        if (source === 'qr360' && data.showOverlayLogo !== undefined) {
-          setShowOverlayLogo(data.showOverlayLogo);
+        // Set overlay based on source and Firestore data
+        if (source === 'qr360') {
+          // For qr360, use Firestore setting or default to true
+          setShowOverlayLogo(data.showOverlayLogo !== undefined ? data.showOverlayLogo : true);
+        } else {
+          // For qrCodes, never show overlay
+          setShowOverlayLogo(false);
         }
 
         // Handle folder contents
         if (data.folderContents) {
-          setFiles(data.folderContents);
+          setAllFolderData(data.folderContents);
+          setCurrentFolderContents(data.folderContents); // Start at root level
           setDataType('drive');
         } else if (data.folderUrls) {
           const convertedFiles = data.folderUrls.map((item, index) => ({
@@ -73,15 +150,18 @@ const FolderFileList = ({ shortId: propShortId, label: propLabel, source: propSo
             url: item.url,
             type: 'enscape-360',
           }));
-          setFiles(convertedFiles);
+          setAllFolderData(convertedFiles);
+          setCurrentFolderContents(convertedFiles);
           setDataType('enscape');
         } else if (data.targetUrl) {
-          setFiles([{
+          const singleFile = [{
             id: 'single-file',
             name: data.fileName || 'File',
             url: data.targetUrl,
             type: 'enscape-360',
-          }]);
+          }];
+          setAllFolderData(singleFile);
+          setCurrentFolderContents(singleFile);
           setDataType('enscape');
         } else {
           setError('No folder contents found.');
@@ -114,7 +194,17 @@ const FolderFileList = ({ shortId: propShortId, label: propLabel, source: propSo
     return file.url;
   };
 
-  const handleFileClick = (file) => setSelectedFile(file);
+  const handleFileClick = (file) => {
+    const isFolder = file.type === 'application/vnd.google-apps.folder';
+    
+    if (isFolder) {
+      // Navigate into the folder
+      navigateToFolder(file);
+    } else {
+      // Open file preview
+      setSelectedFile(file);
+    }
+  };
 
   const getFileIconForEnscape = (fileName) => {
     const extension = fileName.split('.').pop()?.toLowerCase();
@@ -141,8 +231,8 @@ const FolderFileList = ({ shortId: propShortId, label: propLabel, source: propSo
         />
         <div className="iframe-blocker" />
 
-        {/* Overlay logo only if showOverlayLogo is true */}
-        {showOverlayLogo && (
+        {/* Overlay logo only for qr360 source and if showOverlayLogo is true */}
+        {source === 'qr360' && showOverlayLogo && (
           <>
             <img src="/overlay_logo.png" alt="Centered Logo" className="center-image" />
             <div className="top-right-blocker" />
@@ -165,31 +255,91 @@ const FolderFileList = ({ shortId: propShortId, label: propLabel, source: propSo
 
   return (
     <main>
-      <h1>{label || 'Folder Contents'}</h1>
-      {loading && <p>Loading files...</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {files.length === 0 && !loading && !error && <p>No files found in this folder.</p>}
+      {/* Header with navigation */}
+      <div className="folder-navigation">
+        <h1>{label || 'Folder Contents'}</h1>
+        
+        {/* Breadcrumb navigation */}
+        {currentFolderPath && (
+          <div className="breadcrumb-nav">
+            <button
+              onClick={navigateToRoot}
+              className="breadcrumb-button"
+            >
+              📁 {label || 'Root'}
+            </button>
+            <span>/</span>
+            {folderHistory.map((folder, index) => (
+              <React.Fragment key={folder.id}>
+                <span>{folder.name}</span>
+                {index < folderHistory.length - 1 && <span>/</span>}
+              </React.Fragment>
+            ))}
+          </div>
+        )}
 
-      <ul>
-        {files.map((file) => (
-          <li key={file.id} onClick={() => handleFileClick(file)}>
-            <div className="file-item">
-              {/* eslint-disable-next-line */}
-              <a 
-                className="file-link" 
-                href="#" 
-                onClick={(e) => e.preventDefault()}
-                style={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}
-              >
-                <span className="file-icon">
-                  {dataType === 'drive' ? getFileIcon(file.type) : getFileIconForEnscape(file.name)}
-                </span>
-                <span className="file-name">{file.name}</span>
-              </a>
-            </div>
-          </li>
-        ))}
+        {/* Back button */}
+        {folderHistory.length > 0 && (
+          <button
+            onClick={navigateBack}
+            className="back-button"
+          >
+            ← Back
+          </button>
+        )}
+      </div>
+
+      {loading && <p className="loading-message">Loading files...</p>}
+      {error && <div className="error-message">{error}</div>}
+      {currentFolderContents.length === 0 && !loading && !error && (
+        <div className="empty-message">No files found in this folder.</div>
+      )}
+
+      <ul className="file-list">
+        {currentFolderContents.map((file) => {
+          const isFolder = file.type === 'application/vnd.google-apps.folder';
+          const hasChildren = file.children && file.children.length > 0;
+          
+          return (
+            <li key={file.id} className="file-list-item">
+              <div className="file-item">
+                <a 
+                  className={`file-link ${isFolder ? 'folder-link' : ''}`}
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleFileClick(file);
+                  }}
+                >
+                  <div className="file-icon">
+                    {dataType === 'drive' ? getFileIcon(file.type) : getFileIconForEnscape(file.name)}
+                  </div>
+                  <div className="file-name-container">
+                    <div className="file-name">
+                      {file.name}
+                    </div>
+                    <div className="file-meta">
+                      {isFolder && hasChildren && (
+                        <span>{file.children.length} items</span>
+                      )}
+                      {isFolder && !hasChildren && (
+                        <span>Empty folder</span>
+                      )}
+                      {file.error && (
+                        <span className="file-error">⚠️ {file.error}</span>
+                      )}
+                    </div>
+                  </div>
+                  {isFolder && (
+                    <div className="folder-arrow"></div>
+                  )}
+                </a>
+              </div>
+            </li>
+          );
+        })}
       </ul>
+
     </main>
   );
 };

@@ -19,6 +19,7 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
   const [fadeOutQRModal, setFadeOutQRModal] = useState(false);
   const [belowQRText, setBelowQRText] = useState('');
   const [qrUrl, setQrUrl] = useState('');
+  const [isLoadingFolderStructure, setIsLoadingFolderStructure] = useState(false);
 
   const [enableNote, setEnableNote] = useState(false);
   const [enableExpiry, setEnableExpiry] = useState(false);
@@ -63,6 +64,74 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
       qrInstance.current.append(qrRef.current);
     }
   }, [showQR]);
+
+  // Recursive function to fetch folder contents
+  const fetchFolderContentsRecursively = async (folderId, accessToken, maxDepth = 10, currentDepth = 0) => {
+    // Prevent infinite recursion and limit depth for performance
+    if (currentDepth >= maxDepth) {
+      console.warn(`Max depth (${maxDepth}) reached for folder ${folderId}`);
+      return [];
+    }
+
+    try {
+      console.log(`📁 Fetching folder contents for ${folderId} at depth ${currentDepth}`);
+      
+      // Use your existing getFolderChildren function
+      const children = await getFolderChildren(folderId, accessToken);
+      
+      const processedChildren = [];
+      
+      for (const child of children) {
+        const processedChild = {
+          id: child.id,
+          name: child.name,
+          type: child.mimeType,
+          link: child.mimeType === 'application/vnd.google-apps.folder'
+            ? `https://drive.google.com/drive/folders/${child.id}`
+            : `https://drive.google.com/file/d/${child.id}/view`,
+          depth: currentDepth
+        };
+        
+        // If this child is a folder, recursively fetch its contents
+        if (child.mimeType === 'application/vnd.google-apps.folder') {
+          try {
+            processedChild.children = await fetchFolderContentsRecursively(
+              child.id, 
+              accessToken, 
+              maxDepth, 
+              currentDepth + 1
+            );
+            processedChild.hasChildren = processedChild.children.length > 0;
+          } catch (nestedErr) {
+            console.error(`❌ Error fetching nested folder ${child.id}:`, nestedErr);
+            processedChild.children = [];
+            processedChild.hasChildren = false;
+            processedChild.error = 'Failed to fetch nested contents';
+          }
+        }
+        
+        processedChildren.push(processedChild);
+      }
+      
+      return processedChildren;
+      
+    } catch (error) {
+      console.error(`❌ Error fetching folder contents for ${folderId}:`, error);
+      throw error;
+    }
+  };
+
+  // Helper function to count total items in nested structure
+  const countTotalItems = (items) => {
+    let count = 0;
+    for (const item of items) {
+      count++;
+      if (item.children && item.children.length > 0) {
+        count += countTotalItems(item.children);
+      }
+    }
+    return count;
+  };
 
   const handleGenerateClick = () => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -169,68 +238,86 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
   };
 
   const handleConfirmInputs = async () => {
-  if (enableExpiry && !expiration) {
-    alert('Please enter an expiration date and time.');
-    return;
-  }
-
-  console.log('🔑 Access token received in QRgen:', accessToken);
-
-  const shortId = nanoid(8);
-
-  const qrMetadata = {
-    targetUrl: baseUrl,
-    fileId,
-    isFolder,
-    fileName,
-    createdAt: serverTimestamp(),
-  };
-
-  if (enableNote) qrMetadata.message = noteContent;
-  if (enableExpiry) qrMetadata.expiration = new Date(expiration);
-  if (enablePassword) qrMetadata.password = password;
-  if (enableLabel) qrMetadata.label = belowQRText;
-
-  if (isFolder && accessToken) {
-    try {
-      console.log('📁 Attempting to fetch folder children for', fileId);
-      const children = await getFolderChildren(fileId, accessToken);
-      console.log('✅ Folder children fetched:', children);
-
-      qrMetadata.folderContents = children.map((child) => ({
-        id: child.id,
-        name: child.name,
-        type: child.mimeType,
-        link:
-          child.mimeType === 'application/vnd.google-apps.folder'
-            ? `https://drive.google.com/drive/folders/${child.id}`
-            : `https://drive.google.com/file/d/${child.id}/view`,
-      }));
-    } catch (err) {
-      console.error('❌ Error fetching folder children:', err);
+    if (enableExpiry && !expiration) {
+      alert('Please enter an expiration date and time.');
+      return;
     }
-  }
 
-  console.log('📦 Final QR metadata to be saved:', qrMetadata);
+    console.log('🔑 Access token received in QRgen:', accessToken);
 
-  try {
-    await setDoc(doc(db, 'qrCodes', shortId), qrMetadata);
-    clearTempData();
-    const landingPageUrl = `${window.location.origin}/qr/${shortId}`;
-    setQrUrl(landingPageUrl);
-    qrInstance.current.update({ data: landingPageUrl });
-    setFadeOutInputModal(true);
-    setTimeout(() => {
-      setShowInputModal(false);
-      setShowQR(true);
-      setFadeOutQRModal(false);
-    }, 200);
-  } catch (err) {
-    console.error('❌ Error saving QR metadata to Firestore:', err);
-    alert('Failed to generate QR. Please try again.');
-  }
-};
+    const shortId = nanoid(8);
 
+    const qrMetadata = {
+      targetUrl: baseUrl,
+      fileId,
+      isFolder,
+      fileName,
+      createdAt: serverTimestamp(),
+    };
+
+    if (enableNote) qrMetadata.message = noteContent;
+    if (enableExpiry) qrMetadata.expiration = new Date(expiration);
+    if (enablePassword) qrMetadata.password = password;
+    if (enableLabel) qrMetadata.label = belowQRText;
+
+    if (isFolder && accessToken) {
+      try {
+        console.log('📁 Attempting to fetch nested folder structure for', fileId);
+        setIsLoadingFolderStructure(true);
+        
+        const nestedContents = await fetchFolderContentsRecursively(fileId, accessToken, 5, 0);
+        
+        console.log('✅ Nested folder structure fetched:', nestedContents);
+
+        qrMetadata.folderContents = nestedContents;
+        qrMetadata.hasNestedStructure = true;
+        qrMetadata.totalItems = countTotalItems(nestedContents);
+        
+      } catch (err) {
+        console.error('❌ Error fetching nested folder structure:', err);
+        
+        // Fallback to simple folder listing
+        try {
+          console.log('📁 Falling back to simple folder listing...');
+          const children = await getFolderChildren(fileId, accessToken);
+          qrMetadata.folderContents = children.map((child) => ({
+            id: child.id,
+            name: child.name,
+            type: child.mimeType,
+            link: child.mimeType === 'application/vnd.google-apps.folder'
+              ? `https://drive.google.com/drive/folders/${child.id}`
+              : `https://drive.google.com/file/d/${child.id}/view`,
+            depth: 0
+          }));
+          qrMetadata.hasNestedStructure = false;
+          qrMetadata.totalItems = children.length;
+        } catch (fallbackErr) {
+          console.error('❌ Fallback folder fetch also failed:', fallbackErr);
+        }
+      } finally {
+        setIsLoadingFolderStructure(false);
+      }
+    }
+
+    console.log('📦 Final QR metadata to be saved:', qrMetadata);
+
+    try {
+      await setDoc(doc(db, 'qrCodes', shortId), qrMetadata);
+      clearTempData();
+      const landingPageUrl = `${window.location.origin}/qr/${shortId}`;
+      setQrUrl(landingPageUrl);
+      qrInstance.current.update({ data: landingPageUrl });
+      setFadeOutInputModal(true);
+      setTimeout(() => {
+        setShowInputModal(false);
+        setShowQR(true);
+        setFadeOutQRModal(false);
+      }, 200);
+    } catch (err) {
+      console.error('❌ Error saving QR metadata to Firestore:', err);
+      alert('Failed to generate QR. Please try again.');
+    }
+  };
 
   const handleCloseInputModal = () => {
     saveTempData();
@@ -263,6 +350,19 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
             onClick={(e) => e.stopPropagation()}
           >
             <h3>QR Options for "{truncateFileName(fileName)}"</h3>
+
+            {isFolder && (
+              <div style={{ 
+                background: '#f5f5f5', 
+                padding: '8px 12px', 
+                borderRadius: '4px', 
+                marginBottom: '15px',
+                fontSize: '12px',
+                color: '#666'
+              }}>
+                📁 This will generate a QR code with complete nested folder structure (up to 10 levels deep)
+              </div>
+            )}
 
             <div className="qr-options-row">
               <label>
@@ -375,7 +475,31 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
             )}
 
             <div className="qr-button-row">
-              <button onClick={handleConfirmInputs}>Generate</button>
+              <button 
+                onClick={handleConfirmInputs}
+                disabled={isLoadingFolderStructure}
+                style={{ position: 'relative' }}
+              >
+                {isLoadingFolderStructure ? (
+                  <>
+                    <span style={{ opacity: 0.7 }}>Scanning folders...</span>
+                    <div style={{
+                      position: 'absolute',
+                      right: '8px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid #ccc',
+                      borderTop: '2px solid #333',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }}></div>
+                  </>
+                ) : (
+                  'Generate'
+                )}
+              </button>
               <button onClick={handleCloseInputModal}>Cancel</button>
             </div>
           </div>
@@ -408,6 +532,13 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
           </div>
         </div>
       )}
+
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: translateY(-50%) rotate(0deg); }
+          100% { transform: translateY(-50%) rotate(360deg); }
+        }
+      `}</style>
     </>
   );
 };
