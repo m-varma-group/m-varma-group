@@ -8,6 +8,7 @@ import '../css/EditQRModal.css';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import QRCodeStyling from 'qr-code-styling';
+import { getFolderChildren } from './utils.js'; // Import your existing utility
 
 const EditQRModal = ({ onClose }) => {
   const [qrImage, setQrImage] = useState(null);
@@ -19,14 +20,22 @@ const EditQRModal = ({ onClose }) => {
     password: '',
     expiration: null,
     label: '',
-    targetUrl: ''
+    targetUrl: '',
+    isFolder: false,
+    fileId: null,
+    folderId: null,
+    folderContents: [],
+    folderUrls: [],
+    hasNestedStructure: false
   });
-  const [originalLabel, setOriginalLabel] = useState(''); // Track original label
+  const [originalLabel, setOriginalLabel] = useState('');
   const [closing, setClosing] = useState(false);
   const [collection, setCollection] = useState('qrCodes');
-  const [qrLink, setQrLink] = useState(''); // New state for QR link input
-  const [inputMethod, setInputMethod] = useState('image'); // 'image' or 'link'
+  const [qrLink, setQrLink] = useState('');
+  const [inputMethod, setInputMethod] = useState('image');
+  const [isUpdatingFolder, setIsUpdatingFolder] = useState(false);
 
+  const accessToken = localStorage.getItem('accessToken');
   const fileInputRef = useRef();
   const modalRef = useRef();
   const editorRef = useRef(null);
@@ -36,19 +45,30 @@ const EditQRModal = ({ onClose }) => {
     setClosing(true);
     setTimeout(() => {
       onClose();
-    }, 200); // Match fadeOut duration
+    }, 200);
   }, [onClose]);
 
   const handleClear = () => {
     setQrImage(null);
     setQrId(null);
-    setQrData({ message: '', password: '', expiration: null, label: '', targetUrl: '' });
+    setQrData({ 
+      message: '', 
+      password: '', 
+      expiration: null, 
+      label: '', 
+      targetUrl: '',
+      isFolder: false,
+      fileId: null,
+      folderId: null,
+      folderContents: [],
+      folderUrls: [],
+      hasNestedStructure: false
+    });
     setOriginalLabel('');
     setStatus('');
     setError('');
     setQrLink('');
     setInputMethod('image');
-    // Clear the TinyMCE editor
     if (editorRef.current) {
       editorRef.current.setContent('');
     }
@@ -87,13 +107,12 @@ const EditQRModal = ({ onClose }) => {
     if (!filename || filename.trim() === '') {
       return 'qr-code';
     }
-    // Remove or replace invalid characters for filenames
     return filename
       .trim()
-      .replace(/[<>:"/\\|?*]/g, '') // Remove invalid characters
-      .replace(/\s+/g, '-') // Replace spaces with hyphens
-      .replace(/\.+$/g, '') // Remove trailing dots
-      .substring(0, 100); // Limit length to 100 characters
+      .replace(/[<>:"/\\|?*]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/\.+$/g, '')
+      .substring(0, 100);
   };
 
   // Initialize QRCodeStyling instance
@@ -120,20 +139,16 @@ const EditQRModal = ({ onClose }) => {
   const downloadQRWithLabel = async (qrUrl, label, fileName = 'qr-code') => {
     if (!qrInstanceRef.current) return;
 
-    // Update QR instance with the URL
     qrInstanceRef.current.update({ data: qrUrl });
 
-    // Create a temporary div to render the QR
     const tempDiv = document.createElement('div');
     tempDiv.style.position = 'absolute';
     tempDiv.style.left = '-9999px';
     document.body.appendChild(tempDiv);
 
     try {
-      // Append QR to temp div and wait for it to render
       qrInstanceRef.current.append(tempDiv);
       
-      // Wait a bit for the QR to render
       await new Promise(resolve => setTimeout(resolve, 500));
 
       const qrCanvas = tempDiv.querySelector('canvas');
@@ -142,7 +157,6 @@ const EditQRModal = ({ onClose }) => {
       }
 
       const width = qrCanvas.width;
-      // Dynamic height based on text length
       const height = label && label.length > 30 ? qrCanvas.height + 34 : qrCanvas.height + 24;
       
       const finalCanvas = document.createElement('canvas');
@@ -150,20 +164,15 @@ const EditQRModal = ({ onClose }) => {
       finalCanvas.height = height;
       const ctx = finalCanvas.getContext('2d');
       
-      // Fill white background
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
-      
-      // Draw QR code
       ctx.drawImage(qrCanvas, 0, 0);
       
-      // Add label if exists
       if (label) {
         ctx.fillStyle = '#000000';
         ctx.font = label.length <= 24 ? '12px Arial' : '10px Arial';
         ctx.textAlign = 'center';
        
-        // Split text into lines of max 30 characters
         const line1 = label.substring(0, 30);
         const line2 = label.substring(30);
        
@@ -173,21 +182,160 @@ const EditQRModal = ({ onClose }) => {
         }
       }
      
-      // Download the image with sanitized filename
       const sanitizedFileName = sanitizeFilename(fileName);
       const link = document.createElement('a');
       link.download = `${sanitizedFileName}.png`;
       link.href = finalCanvas.toDataURL('image/png');
       link.click();
 
-      // Clean up
       document.body.removeChild(tempDiv);
-      
       return true;
     } catch (error) {
       console.error('Error downloading QR:', error);
       document.body.removeChild(tempDiv);
       return false;
+    }
+  };
+
+  // NEW: Recursive function to fetch folder contents (adapted from QRgen)
+  const fetchFolderContentsRecursively = async (folderId, accessToken, maxDepth = 10, currentDepth = 0) => {
+    if (currentDepth >= maxDepth) {
+      console.warn(`Max depth (${maxDepth}) reached for folder ${folderId}`);
+      return [];
+    }
+
+    try {
+      console.log(`📁 Fetching folder contents for ${folderId} at depth ${currentDepth}`);
+      
+      const children = await getFolderChildren(folderId, accessToken);
+      const processedChildren = [];
+      
+      for (const child of children) {
+        const processedChild = {
+          id: child.id,
+          name: child.name,
+          type: child.mimeType,
+          link: child.mimeType === 'application/vnd.google-apps.folder'
+            ? `https://drive.google.com/drive/folders/${child.id}`
+            : `https://drive.google.com/file/d/${child.id}/view`,
+          depth: currentDepth
+        };
+        
+        if (child.mimeType === 'application/vnd.google-apps.folder') {
+          try {
+            processedChild.children = await fetchFolderContentsRecursively(
+              child.id, 
+              accessToken, 
+              maxDepth, 
+              currentDepth + 1
+            );
+            processedChild.hasChildren = processedChild.children.length > 0;
+          } catch (nestedErr) {
+            console.error(`❌ Error fetching nested folder ${child.id}:`, nestedErr);
+            processedChild.children = [];
+            processedChild.hasChildren = false;
+            processedChild.error = 'Failed to fetch nested contents';
+          }
+        }
+        
+        processedChildren.push(processedChild);
+      }
+      
+      return processedChildren;
+      
+    } catch (error) {
+      console.error(`❌ Error fetching folder contents for ${folderId}:`, error);
+      throw error;
+    }
+  };
+
+  // NEW: Helper function for QR360Gen style flat folder URLs
+  const getFolderUrls = async (folderId, accessToken) => {
+    const urls = [];
+    
+    const fetchRecursive = async (id) => {
+      try {
+        const children = await getFolderChildren(id, accessToken);
+        
+        for (const child of children) {
+          if (child.mimeType === 'application/vnd.google-apps.folder') {
+            await fetchRecursive(child.id);
+          } else {
+            urls.push({
+              fileName: child.name,
+              url: `https://drive.google.com/file/d/${child.id}/view`
+            });
+          }
+        }
+      } catch (err) {
+        console.error(`Error fetching folder ${id}:`, err);
+      }
+    };
+    
+    await fetchRecursive(folderId);
+    return urls;
+  };
+
+  // NEW: Count total items in nested structure
+  const countTotalItems = (items) => {
+    let count = 0;
+    for (const item of items) {
+      count++;
+      if (item.children && item.children.length > 0) {
+        count += countTotalItems(item.children);
+      }
+    }
+    return count;
+  };
+
+  // NEW: Update folder contents
+  const updateFolderContents = async () => {
+    if (!qrData.isFolder || (!qrData.fileId && !qrData.folderId)) {
+      setError('No folder ID found for updating contents.');
+      return false;
+    }
+
+    if (!accessToken) {
+      setError('No access token found. Please re-authenticate.');
+      return false;
+    }
+
+    const folderId = qrData.fileId || qrData.folderId;
+    setIsUpdatingFolder(true);
+
+    try {
+      console.log('📁 Updating folder contents for:', folderId);
+
+      // Determine which collection and update method to use based on existing data structure
+      if (collection === 'qr360') {
+        // QR360Gen style - flat URL array
+        const folderUrls = await getFolderUrls(folderId, accessToken);
+        setQrData(prev => ({ ...prev, folderUrls }));
+        return { folderUrls };
+      } else {
+        // QRgen style - nested structure
+        const nestedContents = await fetchFolderContentsRecursively(folderId, accessToken, 5, 0);
+        const totalItems = countTotalItems(nestedContents);
+        
+        setQrData(prev => ({ 
+          ...prev, 
+          folderContents: nestedContents,
+          totalItems,
+          hasNestedStructure: true
+        }));
+        
+        return { 
+          folderContents: nestedContents,
+          totalItems,
+          hasNestedStructure: true
+        };
+      }
+    } catch (err) {
+      console.error('❌ Error updating folder contents:', err);
+      setError('Failed to fetch updated folder contents.');
+      return false;
+    } finally {
+      setIsUpdatingFolder(false);
     }
   };
 
@@ -197,7 +345,6 @@ const EditQRModal = ({ onClose }) => {
       setError('');
       setStatus('Fetching QR data...');
 
-      // Extract ID from the link
       const idMatch = link.match(/\/qr\/([^/?]+)/);
       const id = idMatch ? idMatch[1] : null;
       
@@ -233,13 +380,17 @@ const EditQRModal = ({ onClose }) => {
           ? new Date(data.expiration.seconds * 1000)
           : data.expiration || null,
         label: labelValue,
-        targetUrl: data.targetUrl || ''
+        targetUrl: data.targetUrl || '',
+        isFolder: data.isFolder || false,
+        fileId: data.fileId || null,
+        folderId: data.folderId || null,
+        folderContents: data.folderContents || [],
+        folderUrls: data.folderUrls || [],
+        hasNestedStructure: data.hasNestedStructure || false
       });
 
-      // Store original label for comparison
       setOriginalLabel(labelValue);
 
-      // Update TinyMCE editor with the loaded message
       if (editorRef.current) {
         editorRef.current.setContent(data.message || '');
       }
@@ -287,13 +438,17 @@ const EditQRModal = ({ onClose }) => {
           ? new Date(data.expiration.seconds * 1000)
           : data.expiration || null,
         label: labelValue,
-        targetUrl: data.targetUrl || ''
+        targetUrl: data.targetUrl || '',
+        isFolder: data.isFolder || false,
+        fileId: data.fileId || null,
+        folderId: data.folderId || null,
+        folderContents: data.folderContents || [],
+        folderUrls: data.folderUrls || [],
+        hasNestedStructure: data.hasNestedStructure || false
       });
 
-      // Store original label for comparison
       setOriginalLabel(labelValue);
 
-      // Update TinyMCE editor with the loaded message
       if (editorRef.current) {
         editorRef.current.setContent(data.message || '');
       }
@@ -342,21 +497,33 @@ const EditQRModal = ({ onClose }) => {
 
     try {
       const updatedMessage = editorRef.current?.getContent() || '';
-      await updateDoc(doc(db, collection, qrId), {
+      
+      const updateData = {
         message: updatedMessage,
         password: qrData.password,
         expiration: qrData.expiration,
         label: qrData.label,
         targetUrl: qrData.targetUrl,
         updatedAt: new Date()
-      });
+      };
 
-      // Check if label was changed and download QR if so
+      // NEW: If it's a folder, include updated folder contents
+      if (qrData.isFolder) {
+        if (collection === 'qr360') {
+          updateData.folderUrls = qrData.folderUrls;
+        } else {
+          updateData.folderContents = qrData.folderContents;
+          updateData.hasNestedStructure = qrData.hasNestedStructure;
+          updateData.totalItems = qrData.folderContents ? countTotalItems(qrData.folderContents) : 0;
+        }
+      }
+
+      await updateDoc(doc(db, collection, qrId), updateData);
+
       const labelChanged = qrData.label !== originalLabel;
       
       if (labelChanged) {
         const qrUrl = `${window.location.origin}/qr/${qrId}`;
-        // Use the label as filename, fallback to 'updated-qr' if label is empty
         const fileName = (qrData.label.trim() || 'updated') + '-qr';
         const downloadSuccess = await downloadQRWithLabel(qrUrl, qrData.label, fileName);
         
@@ -371,6 +538,14 @@ const EditQRModal = ({ onClose }) => {
     } catch (err) {
       console.error(err);
       setError('Failed to update QR in Firestore.');
+    }
+  };
+
+  // NEW: Handle folder content refresh
+  const handleRefreshFolder = async () => {
+    const updatedContents = await updateFolderContents();
+    if (updatedContents) {
+      setStatus('Folder contents refreshed successfully!');
     }
   };
 
@@ -499,8 +674,8 @@ const EditQRModal = ({ onClose }) => {
                     borderRadius: '4px',
                     cursor: 'pointer',
                     fontSize: '14px',
-                    height: '35px', // Match input height
-                    whiteSpace: 'nowrap' // Prevent text wrapping
+                    height: '35px',
+                    whiteSpace: 'nowrap'
                   }}
                 >
                   Fetch
@@ -521,6 +696,68 @@ const EditQRModal = ({ onClose }) => {
                 boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
               }}
             />
+          </div>
+        )}
+
+        {/* NEW: Folder indicator and refresh button */}
+        {qrId && qrData.isFolder && (
+          <div style={{ 
+            background: '#e3f2fd', 
+            padding: '12px', 
+            borderRadius: '8px', 
+            marginBottom: '16px',
+            border: '1px solid #bbdefb'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#1565c0' }}>
+                  📁 Folder QR Code
+                </span>
+                <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                  {collection === 'qr360' 
+                    ? `Contains ${qrData.folderUrls?.length || 0} files`
+                    : `Contains ${qrData.totalItems || 0} items ${qrData.hasNestedStructure ? '(nested)' : ''}`
+                  }
+                </div>
+              </div>
+              <button
+                onClick={handleRefreshFolder}
+                disabled={isUpdatingFolder}
+                style={{
+                  padding: '6px 16px',
+                  backgroundColor: '#4caf50',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: isUpdatingFolder ? 'not-allowed' : 'pointer',
+                  fontSize: '12px',
+                  opacity: isUpdatingFolder ? 0.6 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  minWidth: '100px',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {isUpdatingFolder ? (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{
+                      width: '12px',
+                      height: '12px',
+                      border: '2px solid transparent',
+                      borderTop: '2px solid white',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite',
+                      flexShrink: 0
+                    }}></div>
+                    Syncing...
+                  </span>
+                ) : (
+                  <>🔄 Refresh</>
+                )}
+              </button>
+            </div>
           </div>
         )}
 
@@ -702,7 +939,16 @@ const EditQRModal = ({ onClose }) => {
             </button>
           )}
           {qrId && (
-            <button className="upload-btn" onClick={handleUpdate} style={{ backgroundColor: '#28a745' }}>
+            <button 
+              className="upload-btn" 
+              onClick={handleUpdate} 
+              style={{ 
+                backgroundColor: isUpdatingFolder ? '#aaa' : '#28a745',
+                cursor: isUpdatingFolder ? 'not-allowed' : 'pointer',
+                opacity: isUpdatingFolder ? 0.7 : 1
+              }}
+              disabled={isUpdatingFolder}
+            >
               Update
             </button>
           )}
@@ -726,6 +972,13 @@ const EditQRModal = ({ onClose }) => {
 
         {error && <p className="error">{error}</p>}
         {status && <p className="success">{status}</p>}
+
+        <style jsx>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     </div>
   );
