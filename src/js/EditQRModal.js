@@ -737,22 +737,21 @@ const EditQRModal = ({ onClose }) => {
                   justifyContent: 'center',
                   gap: '6px',
                   minWidth: '100px',
-                  whiteSpace: 'nowrap'
+                  whiteSpace: 'nowrap',
+                  height: '32px' 
                 }}
               >
                 {isUpdatingFolder ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <div style={{
-                      width: '12px',
-                      height: '12px',
-                      border: '2px solid transparent',
-                      borderTop: '2px solid white',
-                      borderRadius: '50%',
-                      animation: 'spin 1s linear infinite',
-                      flexShrink: 0
-                    }}></div>
-                    Syncing...
-                  </span>
+                  <div style={{
+                    width: '12px',
+                    height: '12px',
+                    border: '2px solid transparent',
+                    borderTop: '2px solid white',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                    flexShrink: 0,
+                    marginTop: '15px'
+                  }}></div>
                 ) : (
                   <>🔄 Refresh</>
                 )}
@@ -985,3 +984,4 @@ const EditQRModal = ({ onClose }) => {
 };
 
 export default EditQRModal;
+
