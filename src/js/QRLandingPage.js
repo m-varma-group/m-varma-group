@@ -6,15 +6,6 @@ import FileEmbedding from './FileEmbedding';
 import FolderFileList from './FolderFileList';
 import '../css/QRLandingPage.css';
 
-/**
- * QRLandingPage
- * - Requires user to enter name (saved to localStorage for future visits)
- * - Validates QR expiration
- * - Validates password (if present)
- * - Logs access to Firestore collection 'qrAccessLogs'
- *   Each log contains: qrId, name, qrName (friendly), isFolder, timestamp, source
- */
-
 const QRLandingPage = () => {
   const { id } = useParams();
 
