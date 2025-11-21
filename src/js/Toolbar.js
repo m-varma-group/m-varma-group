@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import QRInfoModal from './QRInfoModal';
 import EnscapeModal from './EnscapeModal';
 import EditQRModal from './EditQRModal';
+import QRAccessLogModal from './qr_access_log'; // make sure path is correct
 
 const Toolbar = ({
   isMobile,
@@ -17,6 +18,7 @@ const Toolbar = ({
   const [showQRModal, setShowQRModal] = useState(false);
   const [showEnscapeModal, setShowEnscapeModal] = useState(false);
   const [showEditQRModal, setShowEditQRModal] = useState(false);
+  const [showAccessLogModal, setShowAccessLogModal] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   return (
@@ -33,11 +35,7 @@ const Toolbar = ({
 
       <button onClick={() => setShowEnscapeModal(true)} title="Enscape 360 Manager">
         <span className="icon" role="img" aria-label="Enscape 360 Manager">
-          <img
-            src="Enscape-logo.png"
-            alt="Enscape Logo"
-            style={{ display: 'inline-block', verticalAlign: 'middle', height: '1.2em' }}
-          />
+          <img src="Enscape-logo.png" alt="Enscape Logo" style={{ height: '1.2em' }} />
         </span>
         <span className="label">Enscape 360</span>
       </button>
@@ -57,14 +55,15 @@ const Toolbar = ({
             <button onClick={() => { setShowEditQRModal(true); setDropdownOpen(false); }}>
               ✎ Update QR
             </button>
+            <button onClick={() => { setShowAccessLogModal(true); setDropdownOpen(false); }}>
+              📋 Access Logs
+            </button>
             <button onClick={() => { setShowLinkModal(true); setDropdownOpen(false); }}>
               ➤ Default QR
             </button>
           </div>
         )}
       </div>
-
-
 
       {isMobile && (
         <button onClick={() => fetchDriveFiles(currentFolderId)} title="Refresh">
@@ -84,8 +83,10 @@ const Toolbar = ({
       {showQRModal && <QRInfoModal onClose={() => setShowQRModal(false)} />}
       {showEnscapeModal && <EnscapeModal onClose={() => setShowEnscapeModal(false)} />}
       {showEditQRModal && <EditQRModal onClose={() => setShowEditQRModal(false)} />}
+      {showAccessLogModal && <QRAccessLogModal onClose={() => setShowAccessLogModal(false)} />}
     </div>
   );
 };
 
 export default Toolbar;
+
