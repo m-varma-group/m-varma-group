@@ -1,4 +1,4 @@
-// React hooks, CSS styles, and component imports
+// App.js
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
