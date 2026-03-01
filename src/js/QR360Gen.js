@@ -328,7 +328,7 @@ const QR360Gen = ({ url, fileName, isFolder, folderId }) => {
                 <input type="checkbox" checked={enableLabel} onChange={() => setEnableLabel(!enableLabel)} /> Set QR Label
               </label>
               <label>
-                <input type="checkbox" checked={showOverlayLogo} onChange={() => setShowOverlayLogo(!showOverlayLogo)} /> Show Logo   
+                <input type="checkbox" checked={showOverlayLogo} onChange={() => setShowOverlayLogo(!showOverlayLogo)} /> Show Logo{' '}
               </label>
               <label>
                 <input
