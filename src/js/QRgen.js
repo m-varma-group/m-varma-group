@@ -400,7 +400,7 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
                   type="checkbox"
                   checked={requireVisitorDetails}
                   onChange={() => setRequireVisitorDetails(!requireVisitorDetails)}
-                /> Require Visitor Details (Name, Email, Mobile)
+                /> Visitor Details
               </label>
             </div>
 
