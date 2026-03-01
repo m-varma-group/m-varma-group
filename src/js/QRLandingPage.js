@@ -82,6 +82,13 @@ const QRLandingPage = () => {
     }
   };
 
+  //Auto Continue if Nothing Required
+  useEffect(() => {
+    if (data && !data.requireVisitorDetails && !data.password) {
+      setAuthorized(true);
+    }
+  }, [data]);
+  
   // Fetch QR data
   useEffect(() => {
     const fetchQRData = async () => {
@@ -145,34 +152,36 @@ const QRLandingPage = () => {
     const trimmedEmail = visitorEmail.trim();
     const trimmedMobile = visitorMobile.trim();
 
-    if (!trimmedName) {
-      setNameError('Please enter your name');
-      setTimeout(() => setNameError(''), 3000);
-      return;
-    }
-
-    if (!trimmedEmail) {
-      setEmailError('Please enter your email');
-      setTimeout(() => setEmailError(''), 3000);
-      return;
-    }
-
-    if (!validateEmail(trimmedEmail)) {
-      setEmailError('Please enter a valid email address');
-      setTimeout(() => setEmailError(''), 3000);
-      return;
-    }
-
-    if (!trimmedMobile) {
-      setMobileError('Please enter your mobile number');
-      setTimeout(() => setMobileError(''), 3000);
-      return;
-    }
-
-    if (!validateMobile(trimmedMobile)) {
-      setMobileError('Mobile number must be exactly 10 digits');
-      setTimeout(() => setMobileError(''), 3000);
-      return;
+    if (data?.requireVisitorDetails) {
+      if (!trimmedName) {
+        setNameError('Please enter your name');
+        setTimeout(() => setNameError(''), 3000);
+        return;
+      }
+    
+      if (!trimmedEmail) {
+        setEmailError('Please enter your email');
+        setTimeout(() => setEmailError(''), 3000);
+        return;
+      }
+    
+      if (!validateEmail(trimmedEmail)) {
+        setEmailError('Please enter a valid email address');
+        setTimeout(() => setEmailError(''), 3000);
+        return;
+      }
+    
+      if (!trimmedMobile) {
+        setMobileError('Please enter your mobile number');
+        setTimeout(() => setMobileError(''), 3000);
+        return;
+      }
+    
+      if (!validateMobile(trimmedMobile)) {
+        setMobileError('Mobile number must be exactly 10 digits');
+        setTimeout(() => setMobileError(''), 3000);
+        return;
+      }
     }
 
     try {
@@ -213,47 +222,51 @@ const QRLandingPage = () => {
             </>
           )}
 
-          {/* Name */}
-          <div className="qr-password-section">
-            <input
-              type="text"
-              placeholder="Enter your name (required)"
-              value={visitorName}
-              onChange={(e) => setVisitorName(e.target.value)}
-              className="qr-name-input"
-              onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
-            />
-            {nameError && <p className="qr-error">{nameError}</p>}
-          </div>
-
-          {/* Email */}
-          <div className="qr-password-section">
-            <input
-              type="email"
-              placeholder="Enter your email (required)"
-              value={visitorEmail}
-              onChange={(e) => setVisitorEmail(e.target.value)}
-              className="qr-email-input"
-              onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
-            />
-            {emailError && <p className="qr-error">{emailError}</p>}
-          </div>
-
-          {/* Mobile */}
-          <div className="qr-password-section">
-            <input
-              type="tel"
-              placeholder="Enter your 10-digit mobile number"
-              value={visitorMobile}
-              maxLength={10}
-              onChange={(e) =>
-                setVisitorMobile(e.target.value.replace(/\D/g, ''))
-              }
-              className="qr-mobile-input"
-              onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
-            />
-            {mobileError && <p className="qr-error">{mobileError}</p>}
-          </div>
+          {data?.requireVisitorDetails && (
+            <>
+              {/* Name */}
+              <div className="qr-password-section">
+                <input
+                  type="text"
+                  placeholder="Enter your name"
+                  value={visitorName}
+                  onChange={(e) => setVisitorName(e.target.value)}
+                  className="qr-name-input"
+                  onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
+                />
+                {nameError && <p className="qr-error">{nameError}</p>}
+              </div>
+          
+              {/* Email */}
+              <div className="qr-password-section">
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={visitorEmail}
+                  onChange={(e) => setVisitorEmail(e.target.value)}
+                  className="qr-email-input"
+                  onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
+                />
+                {emailError && <p className="qr-error">{emailError}</p>}
+              </div>
+          
+              {/* Mobile */}
+              <div className="qr-password-section">
+                <input
+                  type="tel"
+                  placeholder="Enter your 10-digit mobile number"
+                  value={visitorMobile}
+                  maxLength={10}
+                  onChange={(e) =>
+                    setVisitorMobile(e.target.value.replace(/\D/g, ''))
+                  }
+                  className="qr-mobile-input"
+                  onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
+                />
+                {mobileError && <p className="qr-error">{mobileError}</p>}
+              </div>
+            </>
+          )}
 
           {/* Password if required */}
           {data?.password && (
