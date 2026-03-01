@@ -1,4 +1,3 @@
-// qr_access_log.js
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   collection,
@@ -89,7 +88,7 @@ const QRAccessLogModal = ({ onClose }) => {
   };
 
   // --------------------------------------------------------------------
-  // Filtering Function (memo safe)
+  // FILTERING
   // --------------------------------------------------------------------
   const filterRows = useCallback((rows) => {
     if (!search) return rows;
@@ -98,12 +97,13 @@ const QRAccessLogModal = ({ onClose }) => {
     return rows.filter(
       (r) =>
         (r.name || '').toLowerCase().includes(s) ||
+        (r.email || '').toLowerCase().includes(s) ||
+        (r.mobile || '').toLowerCase().includes(s) ||
         (r.qrName || '').toLowerCase().includes(s) ||
         (r.qrId || '').toLowerCase().includes(s)
     );
   }, [search]);
 
-  // Filter with dependency fixed
   const filteredDrive = useMemo(
     () => filterRows(logsDrive),
     [logsDrive, filterRows]
@@ -114,7 +114,9 @@ const QRAccessLogModal = ({ onClose }) => {
     [logs360, filterRows]
   );
 
-  // Paginate
+  // --------------------------------------------------------------------
+  // PAGINATION
+  // --------------------------------------------------------------------
   const paginatedDrive = filteredDrive.slice((pageDrive - 1) * PAGE_SIZE, pageDrive * PAGE_SIZE);
   const paginated360 = filtered360.slice((page360 - 1) * PAGE_SIZE, page360 * PAGE_SIZE);
 
@@ -122,15 +124,16 @@ const QRAccessLogModal = ({ onClose }) => {
   const pageCount360 = Math.ceil(filtered360.length / PAGE_SIZE);
 
   const activeRows = activeTab === "qrCodes" ? paginatedDrive : paginated360;
-
-  // Pagination setter
   const setPage = activeTab === "qrCodes" ? setPageDrive : setPage360;
   const pageCount = activeTab === "qrCodes" ? pageCountDrive : pageCount360;
 
   return (
-    <div className="qr-modal-overlay" onMouseDown={(e) => {
-      if (e.target.classList.contains("qr-modal-overlay")) onClose();
-    }}>
+    <div
+      className="qr-modal-overlay"
+      onMouseDown={(e) => {
+        if (e.target.classList.contains("qr-modal-overlay")) onClose();
+      }}
+    >
       <div className="qr-access-modal">
         <button className="close-btn" onClick={onClose}>×</button>
 
@@ -157,7 +160,7 @@ const QRAccessLogModal = ({ onClose }) => {
         <div className="log-header-controls">
           <input
             className="search-box"
-            placeholder="Search visitor, QR name, ID..."
+            placeholder="Search visitor, email, mobile, QR name, ID..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -184,9 +187,9 @@ const QRAccessLogModal = ({ onClose }) => {
               const rows = activeTab === 'qrCodes' ? filteredDrive : filtered360;
 
               const csv = [
-                "Time,Visitor,QR Name,Short ID,Type",
+                "Time,Visitor,Email,Mobile,QR Name,Short ID,Type",
                 ...rows.map(r =>
-                  `"${formatDate(r.timestamp)}","${r.name || ""}","${r.qrName || ""}","${r.qrId || ""}","${r.isFolder ? "Folder" : "File"}"`
+                  `"${formatDate(r.timestamp)}","${r.name || ""}","${r.email || ""}","${r.mobile || ""}","${r.qrName || ""}","${r.qrId || ""}","${r.isFolder ? "Folder" : "File"}"`
                 )
               ].join("\n");
 
@@ -210,34 +213,41 @@ const QRAccessLogModal = ({ onClose }) => {
           </div>
         ) : null}
 
-        {/* TABLE (scrollable) */}
+        {/* TABLE */}
         <div className="scroll-table">
           <table>
             <thead>
               <tr>
                 <th>Time</th>
                 <th>Visitor</th>
+                <th>Email</th>
+                <th>Mobile</th>
                 <th>QR Name</th>
                 <th>Short ID</th>
                 <th>Type</th>
-                <th></th> {/* delete column */}
+                <th></th>
               </tr>
             </thead>
 
             <tbody>
               {activeRows.length === 0 ? (
-                <tr><td colSpan="6" className="empty">No logs</td></tr>
+                <tr><td colSpan="8" className="empty">No logs</td></tr>
               ) : (
                 activeRows.map((r) => (
                   <tr key={r._id}>
                     <td>{formatDate(r.timestamp)}</td>
                     <td>{r.name || "Unknown"}</td>
+                    <td>{r.email || "-"}</td>
+                    <td>{r.mobile || "-"}</td>
                     <td>{r.qrName || "-"}</td>
                     <td>{r.qrId}</td>
                     <td>{r.isFolder ? "Folder" : "File"}</td>
                     <td>
-                      <button className="delete-btn" onClick={() => setConfirmDelete(r)}>
-                    🗑️
+                      <button
+                        className="delete-btn"
+                        onClick={() => setConfirmDelete(r)}
+                      >
+                        🗑️
                       </button>
                     </td>
                   </tr>
@@ -254,7 +264,11 @@ const QRAccessLogModal = ({ onClose }) => {
             return (
               <button
                 key={i}
-                className={`page-btn ${pageNum === (activeTab === "qrCodes" ? pageDrive : page360) ? "active" : ""}`}
+                className={`page-btn ${
+                  pageNum === (activeTab === "qrCodes" ? pageDrive : page360)
+                    ? "active"
+                    : ""
+                }`}
                 onClick={() => setPage(pageNum)}
               >
                 {pageNum}
@@ -263,7 +277,7 @@ const QRAccessLogModal = ({ onClose }) => {
           })}
         </div>
 
-        {/* Confirm Delete Modal */}
+        {/* Confirm Delete */}
         {confirmDelete && (
           <div className="delete-confirm-overlay">
             <div className="delete-confirm-box">
