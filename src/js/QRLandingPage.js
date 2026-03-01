@@ -196,8 +196,10 @@ const QRLandingPage = () => {
       }
     }
 
-    if (data) {
+    if (data?.requireVisitorDetails) {
       await logAccess(trimmedName, trimmedEmail, trimmedMobile);
+    } else {
+      await logAccess(null, null, null);
     }
 
     setAuthorized(true);
