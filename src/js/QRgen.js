@@ -25,9 +25,7 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
   const [enableExpiry, setEnableExpiry] = useState(false);
   const [enablePassword, setEnablePassword] = useState(false);
   const [enableLabel, setEnableLabel] = useState(false);
-  const [requireName, setRequireName] = useState(false);
-  const [requireEmail, setRequireEmail] = useState(false);
-  const [requireMobile, setRequireMobile] = useState(false);
+  const [requireVisitorDetails, setRequireVisitorDetails] = useState(false);
 
   const [noteContent, setNoteContent] = useState('');
 
@@ -257,9 +255,7 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
       fileName,
       createdAt: serverTimestamp(),
     };
-    qrMetadata.requireName = requireName;
-    qrMetadata.requireEmail = requireEmail;
-    qrMetadata.requireMobile = requireMobile;
+    qrMetadata.requireVisitorDetails = requireVisitorDetails;
 
     if (enableNote) qrMetadata.message = noteContent;
     if (enableExpiry) qrMetadata.expiration = new Date(expiration);
@@ -402,25 +398,9 @@ const QRgen = ({ fileId, isFolder, fileName }) => {
               <label>
                 <input
                   type="checkbox"
-                  checked={requireName}
-                  onChange={() => setRequireName(!requireName)}
-                /> Require Visitor Name
-              </label>
-              
-              <label>
-                <input
-                  type="checkbox"
-                  checked={requireEmail}
-                  onChange={() => setRequireEmail(!requireEmail)}
-                /> Require Visitor Email
-              </label>
-              
-              <label>
-                <input
-                  type="checkbox"
-                  checked={requireMobile}
-                  onChange={() => setRequireMobile(!requireMobile)}
-                /> Require Visitor Mobile
+                  checked={requireVisitorDetails}
+                  onChange={() => setRequireVisitorDetails(!requireVisitorDetails)}
+                /> Require Visitor Details (Name, Email, Mobile)
               </label>
             </div>
 
