@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { doc, getDoc, collection, addDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import FileEmbedding from './FileEmbedding';
 import FolderFileList from './FolderFileList';
@@ -14,13 +14,17 @@ const QRLandingPage = () => {
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
 
-  // password
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
-  // visitor name
   const [visitorName, setVisitorName] = useState('');
   const [nameError, setNameError] = useState('');
+
+  const [visitorEmail, setVisitorEmail] = useState('');
+  const [emailError, setEmailError] = useState('');
+
+  const [visitorMobile, setVisitorMobile] = useState('');
+  const [mobileError, setMobileError] = useState('');
 
   const [sourceCollection, setSourceCollection] = useState(null);
 
@@ -34,9 +38,28 @@ const QRLandingPage = () => {
     }
   }, []);
 
-  // Write a log entry to Firestore
-  // NOTE: Ensure data is available when calling this function (we call it after data is loaded)
-  const logAccess = async (name) => {
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validateMobile = (mobile) => {
+    const mobileRegex = /^[0-9]{10}$/;
+    return mobileRegex.test(mobile);
+  };
+
+  const deriveNameFromUrl = (url) => {
+    try {
+      const u = new URL(url);
+      const parts = u.pathname.split('/').filter(Boolean);
+      if (parts.length) return decodeURIComponent(parts[parts.length - 1]);
+      return u.hostname;
+    } catch {
+      return url;
+    }
+  };
+
+  const logAccess = async (name, email, mobile) => {
     try {
       const friendlyName =
         (data && (data.label || data.fileName)) ||
@@ -47,30 +70,19 @@ const QRLandingPage = () => {
       await addDoc(collection(db, 'qrAccessLogs'), {
         qrId: id,
         name: name || 'Unknown',
+        email: email || 'Unknown',
+        mobile: mobile || 'Unknown',
         qrName: friendlyName,
         isFolder: !!data?.isFolder,
-        timestamp: new Date(),
+        timestamp: serverTimestamp(),
         source: sourceCollection || 'unknown',
       });
-      // optional: console.log('Access logged for', id, name);
     } catch (err) {
       console.error('Failed to log access:', err);
     }
   };
 
-  const deriveNameFromUrl = (url) => {
-    try {
-      const u = new URL(url);
-      // use last pathname segment if present
-      const parts = u.pathname.split('/').filter(Boolean);
-      if (parts.length) return decodeURIComponent(parts[parts.length - 1]);
-      return u.hostname;
-    } catch {
-      return url;
-    }
-  };
-
-  // Fetch QR data (from qrCodes or qr360)
+  // Fetch QR data
   useEffect(() => {
     const fetchQRData = async () => {
       const tryFetch = async (collectionName) => {
@@ -93,9 +105,11 @@ const QRLandingPage = () => {
 
       const qrData = snap.data();
 
-      // expiration check
       if (qrData.expiration) {
-        const exp = qrData.expiration.toDate?.() || new Date(qrData.expiration.seconds * 1000);
+        const exp =
+          qrData.expiration.toDate?.() ||
+          new Date(qrData.expiration.seconds * 1000);
+
         if (new Date() > exp) {
           setExpired(true);
           setLoading(false);
@@ -109,7 +123,6 @@ const QRLandingPage = () => {
 
     fetchQRData();
 
-    // safety: prevent easy copy
     const disableRightClick = (e) => e.preventDefault();
     const disableKeys = (e) => {
       if ((e.ctrlKey && (e.key === 's' || e.key === 'u')) || e.key === 'F12') {
@@ -127,23 +140,45 @@ const QRLandingPage = () => {
     };
   }, [id]);
 
-  // Continue button handler (validates name and password, stores name, logs access)
   const handleContinue = async () => {
-    const trimmed = (visitorName || '').trim();
-    if (!trimmed) {
+    const trimmedName = visitorName.trim();
+    const trimmedEmail = visitorEmail.trim();
+    const trimmedMobile = visitorMobile.trim();
+
+    if (!trimmedName) {
       setNameError('Please enter your name');
       setTimeout(() => setNameError(''), 3000);
       return;
     }
 
-    // store for future visits
-    try {
-      localStorage.setItem('qrVisitorName', trimmed);
-    } catch (err) {
-      // ignore
+    if (!trimmedEmail) {
+      setEmailError('Please enter your email');
+      setTimeout(() => setEmailError(''), 3000);
+      return;
     }
 
-    // password check
+    if (!validateEmail(trimmedEmail)) {
+      setEmailError('Please enter a valid email address');
+      setTimeout(() => setEmailError(''), 3000);
+      return;
+    }
+
+    if (!trimmedMobile) {
+      setMobileError('Please enter your mobile number');
+      setTimeout(() => setMobileError(''), 3000);
+      return;
+    }
+
+    if (!validateMobile(trimmedMobile)) {
+      setMobileError('Mobile number must be exactly 10 digits');
+      setTimeout(() => setMobileError(''), 3000);
+      return;
+    }
+
+    try {
+      localStorage.setItem('qrVisitorName', trimmedName);
+    } catch {}
+
     if (data?.password) {
       if (passwordInput !== data.password) {
         setPasswordError('Incorrect password. Please try again.');
@@ -152,11 +187,8 @@ const QRLandingPage = () => {
       }
     }
 
-    // Ensure data loaded before logging
-    if (!data) {
-      console.warn('QR data not available yet for logging. Aborting log.');
-    } else {
-      await logAccess(trimmed);
+    if (data) {
+      await logAccess(trimmedName, trimmedEmail, trimmedMobile);
     }
 
     setAuthorized(true);
@@ -165,21 +197,23 @@ const QRLandingPage = () => {
   if (loading) return <div>Loading...</div>;
   if (expired) return <div className="qr-landing-expired">⚠️ QR expired</div>;
 
-  // before access: always require name (and optionally password)
   if (!authorized) {
     return (
       <div className="qr-landing-wrapper">
         <div className="qr-landing-container">
-          {/* show NOTE if present */}
+
           {data?.message && (
             <>
               <h2>NOTE</h2>
-              <div className="qr-landing-message" dangerouslySetInnerHTML={{ __html: data.message }} />
+              <div
+                className="qr-landing-message"
+                dangerouslySetInnerHTML={{ __html: data.message }}
+              />
               <br />
             </>
           )}
 
-          {/* Name (mandatory) */}
+          {/* Name */}
           <div className="qr-password-section">
             <input
               type="text"
@@ -192,7 +226,36 @@ const QRLandingPage = () => {
             {nameError && <p className="qr-error">{nameError}</p>}
           </div>
 
-          {/* password if required */}
+          {/* Email */}
+          <div className="qr-password-section">
+            <input
+              type="email"
+              placeholder="Enter your email (required)"
+              value={visitorEmail}
+              onChange={(e) => setVisitorEmail(e.target.value)}
+              className="qr-email-input"
+              onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
+            />
+            {emailError && <p className="qr-error">{emailError}</p>}
+          </div>
+
+          {/* Mobile */}
+          <div className="qr-password-section">
+            <input
+              type="tel"
+              placeholder="Enter your 10-digit mobile number"
+              value={visitorMobile}
+              maxLength={10}
+              onChange={(e) =>
+                setVisitorMobile(e.target.value.replace(/\D/g, ''))
+              }
+              className="qr-mobile-input"
+              onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
+            />
+            {mobileError && <p className="qr-error">{mobileError}</p>}
+          </div>
+
+          {/* Password if required */}
           {data?.password && (
             <div className="qr-password-section">
               <input
@@ -203,7 +266,9 @@ const QRLandingPage = () => {
                 className="qr-password-input"
                 onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
               />
-              {passwordError && <p className="qr-password-error">{passwordError}</p>}
+              {passwordError && (
+                <p className="qr-password-error">{passwordError}</p>
+              )}
             </div>
           )}
 
@@ -215,7 +280,6 @@ const QRLandingPage = () => {
     );
   }
 
-  // after access: folder or file
   if (data?.isFolder) {
     return <FolderFileList shortId={id} />;
   }
