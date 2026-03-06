@@ -96,17 +96,36 @@ body {
 }
 
 .qr-password-section {
-  margin-top: 20px;
+  margin-top: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.qr-password-input {
-  padding: 10px;
-  font-size: 16px;
-  width: 250px;
-  margin-bottom: 10px;
+.qr-input-wrapper {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 320px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: white;
+  margin-bottom: 8px;
+}
+
+.qr-input-icon {
+  margin-right: 8px;
+  font-size: 18px;
+  color: #555;
+}
+
+.qr-input-wrapper input {
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 15px;
+  background: transparent;
 }
 
 .qr-password-submit {
