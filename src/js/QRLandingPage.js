@@ -31,8 +31,14 @@ const QRLandingPage = () => {
   // Load saved visitor name
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('qrVisitorName');
-      if (saved) setVisitorName(saved);
+      const savedName = localStorage.getItem('qrVisitorName');
+      const savedEmail = localStorage.getItem('qrVisitorEmail');
+      const savedMobile = localStorage.getItem('qrVisitorMobile');
+  
+      if (savedName) setVisitorName(savedName);
+      if (savedEmail) setVisitorEmail(savedEmail);
+      if (savedMobile) setVisitorMobile(savedMobile);
+  
     } catch (err) {
       console.warn('LocalStorage unavailable', err);
     }
@@ -184,9 +190,15 @@ const QRLandingPage = () => {
       }
     }
 
-    try {
-      localStorage.setItem('qrVisitorName', trimmedName);
-    } catch {}
+    if (data?.requireVisitorDetails) {
+      try {
+        localStorage.setItem('qrVisitorName', trimmedName);
+        localStorage.setItem('qrVisitorEmail', trimmedEmail);
+        localStorage.setItem('qrVisitorMobile', trimmedMobile);
+      } catch (err) {
+        console.warn('LocalStorage unavailable', err);
+      }
+    }
 
     if (data?.password) {
       if (passwordInput !== data.password) {
