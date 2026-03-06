@@ -36,6 +36,7 @@ const EditQRModal = ({ onClose }) => {
     folderUrls: [],
     hasNestedStructure: false,
     totalItems: 0
+    requireVisitorDetails: false
   });
   const [originalLabel, setOriginalLabel] = useState('');
   const [closing, setClosing] = useState(false);
@@ -347,6 +348,7 @@ const EditQRModal = ({ onClose }) => {
         folderUrls: data.folderUrls || [],
         hasNestedStructure: data.hasNestedStructure || false,
         totalItems: data.totalItems || (Array.isArray(data.folderUrls) ? data.folderUrls.length : 0)
+        requireVisitorDetails: data.requireVisitorDetails || false
       });
 
       setOriginalLabel(labelValue);
@@ -397,6 +399,7 @@ const EditQRModal = ({ onClose }) => {
         folderUrls: data.folderUrls || [],
         hasNestedStructure: data.hasNestedStructure || false,
         totalItems: data.totalItems || (Array.isArray(data.folderUrls) ? data.folderUrls.length : 0)
+        requireVisitorDetails: data.requireVisitorDetails || false
       });
 
       setOriginalLabel(labelValue);
@@ -455,6 +458,7 @@ const EditQRModal = ({ onClose }) => {
         expiration: qrData.expiration || null,
         label: qrData.label !== undefined ? qrData.label : null,
         targetUrl: qrData.targetUrl !== undefined ? qrData.targetUrl : null,
+        requireVisitorDetails: qrData.requireVisitorDetails,
         updatedAt: new Date()
       };
 
@@ -667,6 +671,22 @@ const EditQRModal = ({ onClose }) => {
               </div>
               <input className="qr-input-url" type="url" value={qrData.targetUrl} onChange={(e) => setQrData(prev => ({ ...prev, targetUrl: e.target.value }))} placeholder="Enter target URL" />
             </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="checkbox"
+                checked={qrData.requireVisitorDetails}
+                onChange={(e) =>
+                  setQrData(prev => ({
+                    ...prev,
+                    requireVisitorDetails: e.target.checked
+                  }))
+                }
+              />
+              Require Visitor Details (Name, Email, Mobile)
+            </label>
+          </div>
 
             <div style={{ marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
