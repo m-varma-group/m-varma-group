@@ -227,7 +227,9 @@ const QRLandingPage = () => {
           {data?.requireVisitorDetails && (
             <>
               {/* Name */}
-              <div className="qr-password-section">
+             <div className="qr-password-section">
+              <div className="qr-input-wrapper">
+                <span className="qr-input-icon">👤</span>
                 <input
                   type="text"
                   placeholder="Enter your name"
@@ -236,35 +238,42 @@ const QRLandingPage = () => {
                   className="qr-name-input"
                   onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
                 />
-                {nameError && <p className="qr-error">{nameError}</p>}
               </div>
+              {nameError && <p className="qr-error">{nameError}</p>}
+            </div>
           
               {/* Email */}
               <div className="qr-password-section">
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={visitorEmail}
-                  onChange={(e) => setVisitorEmail(e.target.value)}
-                  className="qr-email-input"
-                  onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
-                />
+                <div className="qr-input-wrapper">
+                  <span className="qr-input-icon">✉️</span>
+                  <input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={visitorEmail}
+                    onChange={(e) => setVisitorEmail(e.target.value)}
+                    className="qr-email-input"
+                    onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
+                  />
+                </div>
                 {emailError && <p className="qr-error">{emailError}</p>}
               </div>
           
               {/* Mobile */}
               <div className="qr-password-section">
-                <input
-                  type="tel"
-                  placeholder="Enter your 10-digit mobile number"
-                  value={visitorMobile}
-                  maxLength={10}
-                  onChange={(e) =>
-                    setVisitorMobile(e.target.value.replace(/\D/g, ''))
-                  }
-                  className="qr-mobile-input"
-                  onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
-                />
+                <div className="qr-input-wrapper">
+                  <span className="qr-input-icon">📱</span>
+                  <input
+                    type="tel"
+                    placeholder="Enter your 10-digit mobile number"
+                    value={visitorMobile}
+                    maxLength={10}
+                    onChange={(e) =>
+                      setVisitorMobile(e.target.value.replace(/\D/g, ''))
+                    }
+                    className="qr-mobile-input"
+                    onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
+                  />
+                </div>
                 {mobileError && <p className="qr-error">{mobileError}</p>}
               </div>
             </>
@@ -273,14 +282,17 @@ const QRLandingPage = () => {
           {/* Password if required */}
           {data?.password && (
             <div className="qr-password-section">
-              <input
-                type="password"
-                placeholder="Enter password to continue"
-                value={passwordInput}
-                onChange={(e) => setPasswordInput(e.target.value)}
-                className="qr-password-input"
-                onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
-              />
+              <div className="qr-input-wrapper">
+                <span className="qr-input-icon">🔒</span>
+                <input
+                  type="password"
+                  placeholder="Enter password to continue"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  className="qr-password-input"
+                  onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
+                />
+              </div>
               {passwordError && (
                 <p className="qr-password-error">{passwordError}</p>
               )}
