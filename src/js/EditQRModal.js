@@ -35,7 +35,7 @@ const EditQRModal = ({ onClose }) => {
     folderContents: [],
     folderUrls: [],
     hasNestedStructure: false,
-    totalItems: 0
+    totalItems: 0,
     requireVisitorDetails: false
   });
   const [originalLabel, setOriginalLabel] = useState('');
@@ -347,7 +347,7 @@ const EditQRModal = ({ onClose }) => {
         folderContents: data.folderContents || [],
         folderUrls: data.folderUrls || [],
         hasNestedStructure: data.hasNestedStructure || false,
-        totalItems: data.totalItems || (Array.isArray(data.folderUrls) ? data.folderUrls.length : 0)
+        totalItems: data.totalItems || (Array.isArray(data.folderUrls) ? data.folderUrls.length : 0),
         requireVisitorDetails: data.requireVisitorDetails || false
       });
 
@@ -398,7 +398,7 @@ const EditQRModal = ({ onClose }) => {
         folderContents: data.folderContents || [],
         folderUrls: data.folderUrls || [],
         hasNestedStructure: data.hasNestedStructure || false,
-        totalItems: data.totalItems || (Array.isArray(data.folderUrls) ? data.folderUrls.length : 0)
+        totalItems: data.totalItems || (Array.isArray(data.folderUrls) ? data.folderUrls.length : 0),
         requireVisitorDetails: data.requireVisitorDetails || false
       });
 
